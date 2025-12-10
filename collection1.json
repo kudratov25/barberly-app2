@@ -1,0 +1,2080 @@
+{
+    "variable": [
+        {
+            "id": "baseUrl",
+            "key": "baseUrl",
+            "type": "string",
+            "name": "string",
+            "value": "http:\/\/localhost"
+        }
+    ],
+    "info": {
+        "name": "Laravel API Documentation",
+        "_postman_id": "e1faa50a-a503-4ff4-9232-049f49a940bb",
+        "description": "",
+        "schema": "https:\/\/schema.getpostman.com\/json\/collection\/v2.1.0\/collection.json"
+    },
+    "item": [
+        {
+            "name": "Auth",
+            "description": "",
+            "item": [
+                {
+                    "name": "Register new user.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/register",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/register"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"name\":\"John Doe\",\"phone\":\"+998901234567\",\"email\":\"user@example.com\",\"password\":\"secret123\",\"password_confirmation\":\"secret123\"}"
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 201,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Registration successful\",\n  \"data\": {\n    \"user\": {\n      \"id\": 1,\n      \"name\": \"John Doe\",\n      \"phone\": \"+998901234567\",\n      \"email\": \"user@example.com\",\n      \"email_verified_at\": null,\n      \"created_at\": \"2025-01-01 12:00:00\",\n      \"updated_at\": \"2025-01-01 12:00:00\"\n    },\n    \"token\": \"1|xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n  }\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 422,
+                            "body": "{\n  \"success\": false,\n  \"message\": \"Validation error\",\n  \"errors\": {\n    \"phone\": [\"Bu telefon raqami allaqachon ro'yxatdan o'tgan\"],\n    \"password\": [\"Parollar mos kelmaydi\"]\n  }\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Login with phone & password.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/login",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/login"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"phone\":\"+998901234567\",\"password\":\"secret123\"}"
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Login successful\",\n  \"data\": {\n     \"user\": { \"id\": 1, \"name\": \"Test User\", \"phone\": \"+998901234567\", \"role\": \"client\" },\n     \"token\": \"1|xxxxxxxx\"\n  }\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 401,
+                            "body": "{\n  \"success\": false,\n  \"message\": \"Invalid phone number or password\"\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Logout current user (invalidate token).",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/logout",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/logout"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Logout successful\"\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 401,
+                            "body": "{\n  \"success\": false,\n  \"message\": \"Unauthenticated\"\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Get current authenticated user.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/me",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/me"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"User retrieved successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"John Doe\",\n    \"phone\": \"+998901234567\",\n    \"email\": \"user@example.com\",\n    \"email_verified_at\": null,\n    \"created_at\": \"2025-01-01 12:00:00\",\n    \"updated_at\": \"2025-01-01 12:00:00\",\n    \"roles\": [\"client\"],\n    \"permissions\": []\n  }\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Update user location.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/users\/location",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/users\/location"
+                        },
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"lat\":41.3111,\"lng\":69.2797}"
+                        },
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Location updated successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"John Doe\",\n    \"phone\": \"+998901234567\",\n    \"location_lat\": 41.3111,\n    \"location_lng\": 69.2797\n  }\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 422,
+                            "body": "{\n  \"success\": false,\n  \"message\": \"Validation error\",\n  \"errors\": {\n    \"lat\": [\"The lat field is required.\"],\n    \"lng\": [\"The lng field is required.\"]\n  }\n}",
+                            "name": ""
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Barbers",
+            "description": "",
+            "item": [
+                {
+                    "name": "Get nearby barbers (for client map).",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/barbers\/nearest",
+                            "query": [
+                                {
+                                    "key": "lat",
+                                    "value": "41.3111",
+                                    "description": "Latitude.",
+                                    "disabled": false
+                                },
+                                {
+                                    "key": "lng",
+                                    "value": "69.2797",
+                                    "description": "Longitude.",
+                                    "disabled": false
+                                },
+                                {
+                                    "key": "radius",
+                                    "value": "10",
+                                    "description": "optional Radius in km (1-50).",
+                                    "disabled": false
+                                },
+                                {
+                                    "key": "status",
+                                    "value": "online",
+                                    "description": "optional Filter by status (online\/offline\/busy\/walk_in).",
+                                    "disabled": false
+                                },
+                                {
+                                    "key": "min_rating",
+                                    "value": "4",
+                                    "description": "optional Minimal rating (1-5).",
+                                    "disabled": false
+                                }
+                            ],
+                            "raw": "{{baseUrl}}\/api\/v1\/barbers\/nearest?lat=41.3111&lng=69.2797&radius=10&status=online&min_rating=4"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"lat\":4326.41688,\"lng\":4326.41688,\"radius\":17}"
+                        },
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Nearby barbers retrieved successfully\",\n  \"data\": [\n    {\n      \"id\": 3,\n      \"name\": \"Barber Name\",\n      \"phone\": \"+998901234567\",\n      \"location_lat\": 41.3111,\n      \"location_lng\": 69.2797,\n      \"schedule_status\": \"online\",\n      \"rating_avg\": 4.5,\n      \"distance\": 2.5,\n      \"services\": [\n        {\n          \"id\": 1,\n          \"name\": \"Haircut\"\n        }\n      ],\n      \"schedules\": []\n    }\n  ]\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 422,
+                            "body": "{\n  \"success\": false,\n  \"message\": \"Validation error\",\n  \"errors\": {\n    \"lat\": [\"The lat field is required.\"],\n    \"lng\": [\"The lng field is required.\"]\n  }\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Get barber weekly schedule.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/barbers\/schedule",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/barbers\/schedule"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Schedule retrieved successfully\",\n  \"data\": [\n    {\n      \"id\": 1,\n      \"barber_id\": 3,\n      \"day_of_week\": 1,\n      \"start_time\": \"09:00\",\n      \"end_time\": \"18:00\",\n      \"break_start\": \"13:00\",\n      \"break_end\": \"14:00\",\n      \"is_active\": true\n    }\n  ]\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Update barber status.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/barbers\/status",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/barbers\/status"
+                        },
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"status\":\"online\"}"
+                        },
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Status updated successfully\",\n  \"data\": {\n    \"id\": 3,\n    \"name\": \"Barber Name\",\n    \"schedule_status\": \"online\",\n    \"last_active_at\": \"2025-02-10 15:00:00\"\n  }\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 400,
+                            "body": "{\n  \"success\": false,\n  \"message\": \"Only barbers can update their status.\"\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 422,
+                            "body": "{\n  \"success\": false,\n  \"message\": \"Validation error\",\n  \"errors\": {\n    \"status\": [\"The selected status is invalid.\"]\n  }\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Update barber location (for map & nearest search).",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/barbers\/location",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/barbers\/location"
+                        },
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"lat\":41.3111,\"lng\":69.2797}"
+                        },
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Location updated successfully\",\n  \"data\": {\n    \"id\": 3,\n    \"name\": \"Barber Name\",\n    \"location_lat\": 41.3111,\n    \"location_lng\": 69.2797,\n    \"last_active_at\": \"2025-02-10 15:00:00\"\n  }\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 400,
+                            "body": "{\n  \"success\": false,\n  \"message\": \"Only barbers can update their location.\"\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 422,
+                            "body": "{\n  \"success\": false,\n  \"message\": \"Validation error\",\n  \"errors\": {\n    \"lat\": [\"The lat field is required.\"],\n    \"lng\": [\"The lng field is required.\"]\n  }\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Update barber weekly schedule.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/barbers\/schedule",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/barbers\/schedule"
+                        },
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"schedules\":[\"architecto\"]}"
+                        },
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Schedule updated successfully\"\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 422,
+                            "body": "{\n  \"success\": false,\n  \"message\": \"Validation error\",\n  \"errors\": {\n    \"schedules\": [\"The schedules field is required.\"],\n    \"schedules.0.start_time\": [\"The schedules.0.start_time field is required.\"]\n  }\n}",
+                            "name": ""
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Chat",
+            "description": "",
+            "item": [
+                {
+                    "name": "List chats of current user.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/chats",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/chats"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Chats retrieved successfully\",\n  \"data\": [\n    {\n      \"id\": 3,\n      \"type\": \"private\",\n      \"created_at\": \"2025-02-01 12:00:00\",\n      \"latest_message\": {\n        \"id\": 10,\n        \"message\": \"Salom!\",\n        \"created_at\": \"2025-02-10 15:00:00\"\n      },\n      \"users\": [\n        {\n          \"id\": 1,\n          \"name\": \"User 1\"\n        },\n        {\n          \"id\": 3,\n          \"name\": \"User 3\"\n        }\n      ]\n    }\n  ]\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Create or get private chat with user.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/chats",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/chats"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"user_id\":5}"
+                        },
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 201,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Chat retrieved\/created successfully\",\n  \"data\": {\n    \"id\": 3,\n    \"type\": \"private\",\n    \"created_at\": \"2025-02-01 12:00:00\",\n    \"users\": [\n      {\n        \"id\": 1,\n        \"name\": \"User 1\"\n      },\n      {\n        \"id\": 5,\n        \"name\": \"User 5\"\n      }\n    ]\n  }\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 404,
+                            "body": "{\n  \"success\": false,\n  \"message\": \"User not found\"\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 422,
+                            "body": "{\n  \"success\": false,\n  \"message\": \"Validation error\",\n  \"errors\": {\n    \"user_id\": [\"The user id field is required.\"]\n  }\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Show single chat.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/chats\/:chat_id",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/chats\/:chat_id",
+                            "variable": [
+                                {
+                                    "id": "chat_id",
+                                    "key": "chat_id",
+                                    "value": "1",
+                                    "description": "The ID of the chat."
+                                },
+                                {
+                                    "id": "chat",
+                                    "key": "chat",
+                                    "value": "3",
+                                    "description": "Chat ID."
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Chat retrieved successfully\",\n  \"data\": {\n    \"id\": 3,\n    \"type\": \"private\",\n    \"created_at\": \"2025-02-01 12:00:00\",\n    \"users\": [\n      {\n        \"id\": 1,\n        \"name\": \"User 1\"\n      },\n      {\n        \"id\": 3,\n        \"name\": \"User 3\"\n      }\n    ],\n    \"latest_message\": {\n      \"id\": 10,\n      \"message\": \"Salom!\",\n      \"created_at\": \"2025-02-10 15:00:00\"\n    }\n  }\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "List messages of a chat.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/chats\/:chat_id\/messages",
+                            "query": [
+                                {
+                                    "key": "per_page",
+                                    "value": "50",
+                                    "description": "optional Items per page.",
+                                    "disabled": false
+                                }
+                            ],
+                            "raw": "{{baseUrl}}\/api\/v1\/chats\/:chat_id\/messages?per_page=50",
+                            "variable": [
+                                {
+                                    "id": "chat_id",
+                                    "key": "chat_id",
+                                    "value": "1",
+                                    "description": "The ID of the chat."
+                                },
+                                {
+                                    "id": "chat",
+                                    "key": "chat",
+                                    "value": "3",
+                                    "description": "Chat ID."
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Messages retrieved successfully\",\n  \"data\": {\n    \"current_page\": 1,\n    \"data\": [\n      {\n        \"id\": 10,\n        \"chat_id\": 3,\n        \"user_id\": 1,\n        \"message\": \"Salom!\",\n        \"message_type\": \"text\",\n        \"order_id\": null,\n        \"is_read\": false,\n        \"created_at\": \"2025-02-10 15:00:00\",\n        \"user\": {\n          \"id\": 1,\n          \"name\": \"User 1\"\n        }\n      }\n    ],\n    \"total\": 25,\n    \"per_page\": 50\n  }\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Send message in chat.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/chats\/:chat_id\/messages",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/chats\/:chat_id\/messages",
+                            "variable": [
+                                {
+                                    "id": "chat_id",
+                                    "key": "chat_id",
+                                    "value": "1",
+                                    "description": "The ID of the chat."
+                                },
+                                {
+                                    "id": "chat",
+                                    "key": "chat",
+                                    "value": "3",
+                                    "description": "Chat ID."
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"message\":\"Salom!\",\"message_type\":\"text\",\"order_id\":10}"
+                        },
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 201,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Message sent successfully\",\n  \"data\": {\n    \"id\": 10,\n    \"chat_id\": 3,\n    \"user_id\": 1,\n    \"message\": \"Salom!\",\n    \"message_type\": \"text\",\n    \"order_id\": null,\n    \"is_read\": false,\n    \"created_at\": \"2025-02-10 15:00:00\"\n  }\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 422,
+                            "body": "{\n  \"success\": false,\n  \"message\": \"Validation error\",\n  \"errors\": {\n    \"message\": [\"The message field is required.\"]\n  }\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Mark chat messages as read.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/chats\/:chat_id\/read",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/chats\/:chat_id\/read",
+                            "variable": [
+                                {
+                                    "id": "chat_id",
+                                    "key": "chat_id",
+                                    "value": "1",
+                                    "description": "The ID of the chat."
+                                },
+                                {
+                                    "id": "chat",
+                                    "key": "chat",
+                                    "value": "3",
+                                    "description": "Chat ID."
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Messages marked as read\"\n}",
+                            "name": ""
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Endpoints",
+            "description": "",
+            "item": [
+                {
+                    "name": "Handles the API request and renders the Swagger documentation view.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/documentation",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/documentation"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 500,
+                            "body": "{\n    \"message\": \"Server Error\"\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Handles the OAuth2 callback and retrieves the required file for the redirect.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/oauth2-callback",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/oauth2-callback"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "content-type",
+                                    "value": "text\/html; charset=utf-8"
+                                },
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 200,
+                            "body": "<!doctype html>\n<html lang=\"en-US\">\n<body>\n<script src=\"oauth2-redirect.js\"><\/script>\n<\/body>\n<\/html>\n",
+                            "name": ""
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Orders",
+            "description": "",
+            "item": [
+                {
+                    "name": "List orders for current user.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/orders",
+                            "query": [
+                                {
+                                    "key": "role",
+                                    "value": "barber",
+                                    "description": "optional Filter by role context (barber\/client).",
+                                    "disabled": false
+                                },
+                                {
+                                    "key": "status",
+                                    "value": "completed",
+                                    "description": "optional Filter by status (pending\/in_progress\/completed\/cancelled).",
+                                    "disabled": false
+                                },
+                                {
+                                    "key": "from",
+                                    "value": "2025-02-01",
+                                    "description": "optional Start date (Y-m-d).",
+                                    "disabled": false
+                                },
+                                {
+                                    "key": "to",
+                                    "value": "2025-02-28",
+                                    "description": "optional End date (Y-m-d).",
+                                    "disabled": false
+                                },
+                                {
+                                    "key": "per_page",
+                                    "value": "15",
+                                    "description": "optional Items per page.",
+                                    "disabled": false
+                                }
+                            ],
+                            "raw": "{{baseUrl}}\/api\/v1\/orders?role=barber&status=completed&from=2025-02-01&to=2025-02-28&per_page=15"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Orders retrieved successfully\",\n  \"data\": {\n    \"current_page\": 1,\n    \"data\": [\n      {\n        \"id\": 10,\n        \"shop_id\": 1,\n        \"barber_id\": 3,\n        \"client_id\": 1,\n        \"service_id\": 1,\n        \"status\": \"completed\",\n        \"price\": 50000,\n        \"start_time\": \"2025-02-10 15:00:00\",\n        \"end_time\": \"2025-02-10 15:30:00\",\n        \"barber\": {\n          \"id\": 3,\n          \"name\": \"Barber Name\"\n        },\n        \"client\": {\n          \"id\": 1,\n          \"name\": \"Client Name\"\n        },\n        \"service\": {\n          \"id\": 1,\n          \"name\": \"Haircut\"\n        }\n      }\n    ],\n    \"total\": 5,\n    \"per_page\": 15\n  }\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Create a new order (booking).",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/orders",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/orders"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"barber_id\":5,\"service_id\":12,\"start_time\":\"2025-02-10T15:00:00\"}"
+                        },
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 201,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Order created successfully\",\n  \"data\": {\n    \"id\": 10,\n    \"shop_id\": 1,\n    \"barber_id\": 5,\n    \"client_id\": 1,\n    \"service_id\": 12,\n    \"status\": \"pending\",\n    \"price\": 50000,\n    \"start_time\": \"2025-02-10 15:00:00\",\n    \"end_time\": \"2025-02-10 15:30:00\",\n    \"created_at\": \"2025-02-01 12:00:00\"\n  }\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 422,
+                            "body": "{\n  \"success\": false,\n  \"message\": \"Validation error\",\n  \"errors\": {\n    \"barber_id\": [\"The barber id field is required.\"],\n    \"start_time\": [\"The start time must be a date after now.\"]\n  }\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Show single order.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/orders\/:order_id",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/orders\/:order_id",
+                            "variable": [
+                                {
+                                    "id": "order_id",
+                                    "key": "order_id",
+                                    "value": "1",
+                                    "description": "The ID of the order."
+                                },
+                                {
+                                    "id": "order",
+                                    "key": "order",
+                                    "value": "10",
+                                    "description": "Order ID."
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Order retrieved successfully\",\n  \"data\": {\n    \"id\": 10,\n    \"shop_id\": 1,\n    \"barber_id\": 5,\n    \"client_id\": 1,\n    \"service_id\": 12,\n    \"status\": \"pending\",\n    \"price\": 50000,\n    \"start_time\": \"2025-02-10 15:00:00\",\n    \"end_time\": \"2025-02-10 15:30:00\",\n    \"barber\": {\n      \"id\": 5,\n      \"name\": \"Barber Name\",\n      \"phone\": \"+998901234567\"\n    },\n    \"client\": {\n      \"id\": 1,\n      \"name\": \"Client Name\"\n    },\n    \"service\": {\n      \"id\": 12,\n      \"name\": \"Haircut\",\n      \"price\": 50000\n    },\n    \"shop\": {\n      \"id\": 1,\n      \"name\": \"Barber Shop 1\"\n    }\n  }\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 403,
+                            "body": "{\n  \"success\": false,\n  \"message\": \"You do not have access to this order\"\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Start an order (barber starts service).",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/orders\/:order_id\/start",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/orders\/:order_id\/start",
+                            "variable": [
+                                {
+                                    "id": "order_id",
+                                    "key": "order_id",
+                                    "value": "1",
+                                    "description": "The ID of the order."
+                                },
+                                {
+                                    "id": "order",
+                                    "key": "order",
+                                    "value": "10",
+                                    "description": "Order ID."
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Order started successfully\",\n  \"data\": {\n    \"id\": 10,\n    \"status\": \"in_progress\",\n    \"started_at\": \"2025-02-10 15:00:00\"\n  }\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 400,
+                            "body": "{\n  \"success\": false,\n  \"message\": \"Order cannot be started. It must be in pending status.\"\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Finish an order (service done).",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/orders\/:order_id\/finish",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/orders\/:order_id\/finish",
+                            "variable": [
+                                {
+                                    "id": "order_id",
+                                    "key": "order_id",
+                                    "value": "1",
+                                    "description": "The ID of the order."
+                                },
+                                {
+                                    "id": "order",
+                                    "key": "order",
+                                    "value": "10",
+                                    "description": "Order ID."
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Order finished successfully\",\n  \"data\": {\n    \"id\": 10,\n    \"status\": \"completed\",\n    \"finished_at\": \"2025-02-10 15:30:00\"\n  }\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 400,
+                            "body": "{\n  \"success\": false,\n  \"message\": \"Order cannot be finished. It must be in progress.\"\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Cancel an order.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/orders\/:order_id\/cancel",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/orders\/:order_id\/cancel",
+                            "variable": [
+                                {
+                                    "id": "order_id",
+                                    "key": "order_id",
+                                    "value": "1",
+                                    "description": "The ID of the order."
+                                },
+                                {
+                                    "id": "order",
+                                    "key": "order",
+                                    "value": "10",
+                                    "description": "Order ID."
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Order cancelled successfully\",\n  \"data\": {\n    \"id\": 10,\n    \"status\": \"cancelled\",\n    \"cancelled_at\": \"2025-02-10 14:00:00\"\n  }\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 400,
+                            "body": "{\n  \"success\": false,\n  \"message\": \"Order cannot be cancelled. Only pending orders can be cancelled.\"\n}",
+                            "name": ""
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Ratings",
+            "description": "",
+            "item": [
+                {
+                    "name": "List ratings.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/ratings",
+                            "query": [
+                                {
+                                    "key": "barber_id",
+                                    "value": "5",
+                                    "description": "optional Filter by barber ID.",
+                                    "disabled": false
+                                },
+                                {
+                                    "key": "per_page",
+                                    "value": "15",
+                                    "description": "optional Items per page.",
+                                    "disabled": false
+                                }
+                            ],
+                            "raw": "{{baseUrl}}\/api\/v1\/ratings?barber_id=5&per_page=15"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Ratings retrieved successfully\",\n  \"data\": {\n    \"current_page\": 1,\n    \"data\": [\n      {\n        \"id\": 7,\n        \"barber_id\": 5,\n        \"client_id\": 1,\n        \"order_id\": 10,\n        \"rating\": 5,\n        \"comment\": \"Juda zo'r xizmat!\",\n        \"created_at\": \"2025-02-10 15:30:00\",\n        \"barber\": {\n          \"id\": 5,\n          \"name\": \"Barber Name\"\n        },\n        \"client\": {\n          \"id\": 1,\n          \"name\": \"Client Name\"\n        },\n        \"order\": {\n          \"id\": 10,\n          \"service_id\": 12\n        }\n      }\n    ],\n    \"total\": 20,\n    \"per_page\": 15\n  }\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Create rating for completed order.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/ratings",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/ratings"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"order_id\":10,\"rating\":5,\"comment\":\"Juda zo'r xizmat!\"}"
+                        },
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 201,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Rating created successfully\",\n  \"data\": {\n    \"id\": 7,\n    \"barber_id\": 5,\n    \"client_id\": 1,\n    \"order_id\": 10,\n    \"rating\": 5,\n    \"comment\": \"Juda zo'r xizmat!\",\n    \"created_at\": \"2025-02-10 15:30:00\"\n  }\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 400,
+                            "body": "{\n  \"success\": false,\n  \"message\": \"Order must be completed before rating.\"\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 422,
+                            "body": "{\n  \"success\": false,\n  \"message\": \"Validation error\",\n  \"errors\": {\n    \"order_id\": [\"The order id field is required.\"],\n    \"rating\": [\"The rating must be between 1 and 5.\"]\n  }\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Show single rating.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/ratings\/:rating_id",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/ratings\/:rating_id",
+                            "variable": [
+                                {
+                                    "id": "rating_id",
+                                    "key": "rating_id",
+                                    "value": "1",
+                                    "description": "The ID of the rating."
+                                },
+                                {
+                                    "id": "rating",
+                                    "key": "rating",
+                                    "value": "7",
+                                    "description": "Rating ID."
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Rating retrieved successfully\",\n  \"data\": {\n    \"id\": 7,\n    \"barber_id\": 5,\n    \"client_id\": 1,\n    \"order_id\": 10,\n    \"rating\": 5,\n    \"comment\": \"Juda zo'r xizmat!\",\n    \"created_at\": \"2025-02-10 15:30:00\",\n    \"barber\": {\n      \"id\": 5,\n      \"name\": \"Barber Name\",\n      \"phone\": \"+998901234567\"\n    },\n    \"client\": {\n      \"id\": 1,\n      \"name\": \"Client Name\"\n    },\n    \"order\": {\n      \"id\": 10,\n      \"service_id\": 12,\n      \"price\": 50000\n    }\n  }\n}",
+                            "name": ""
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Services",
+            "description": "",
+            "item": [
+                {
+                    "name": "List services",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/services",
+                            "query": [
+                                {
+                                    "key": "shop_id",
+                                    "value": "1",
+                                    "description": "optional Shop ID to filter by.",
+                                    "disabled": false
+                                },
+                                {
+                                    "key": "per_page",
+                                    "value": "15",
+                                    "description": "optional Items per page.",
+                                    "disabled": false
+                                }
+                            ],
+                            "raw": "{{baseUrl}}\/api\/v1\/services?shop_id=1&per_page=15"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Services retrieved successfully\",\n  \"data\": {\n    \"current_page\": 1,\n    \"data\": [\n      {\n        \"id\": 1,\n        \"name\": \"Haircut\",\n        \"description\": \"Professional haircut service\",\n        \"price\": 50000,\n        \"duration_minutes\": 30,\n        \"is_active\": true,\n        \"shop_id\": 1,\n        \"shop\": {\n          \"id\": 1,\n          \"name\": \"Barber Shop 1\"\n        },\n        \"users\": [\n          {\n            \"id\": 3,\n            \"name\": \"Barber Name\"\n          }\n        ]\n      }\n    ],\n    \"total\": 5,\n    \"per_page\": 15\n  }\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Show single service",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/services\/:service_id",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/services\/:service_id",
+                            "variable": [
+                                {
+                                    "id": "service_id",
+                                    "key": "service_id",
+                                    "value": "1",
+                                    "description": "The ID of the service."
+                                },
+                                {
+                                    "id": "service",
+                                    "key": "service",
+                                    "value": "1",
+                                    "description": "Service ID."
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Service retrieved successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"Haircut\",\n    \"description\": \"Professional haircut service\",\n    \"price\": 50000,\n    \"duration_minutes\": 30,\n    \"is_active\": true,\n    \"shop_id\": 1,\n    \"shop\": {\n      \"id\": 1,\n      \"name\": \"Barber Shop 1\",\n      \"address\": \"Tashkent, Chilonzor\"\n    },\n    \"users\": [\n      {\n        \"id\": 3,\n        \"name\": \"Barber Name\",\n        \"phone\": \"+998901234567\"\n      }\n    ]\n  }\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 404,
+                            "body": "{\n  \"success\": false,\n  \"message\": \"Resource not found\"\n}",
+                            "name": ""
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Shops",
+            "description": "",
+            "item": [
+                {
+                    "name": "List shops.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/shops",
+                            "query": [
+                                {
+                                    "key": "lat",
+                                    "value": "41.3111",
+                                    "description": "optional Latitude for nearby filter.",
+                                    "disabled": false
+                                },
+                                {
+                                    "key": "lng",
+                                    "value": "69.2797",
+                                    "description": "optional Longitude for nearby filter.",
+                                    "disabled": false
+                                },
+                                {
+                                    "key": "radius",
+                                    "value": "5",
+                                    "description": "optional Radius in km (default 10).",
+                                    "disabled": false
+                                },
+                                {
+                                    "key": "status",
+                                    "value": "active",
+                                    "description": "optional Shop status (active\/inactive).",
+                                    "disabled": false
+                                },
+                                {
+                                    "key": "per_page",
+                                    "value": "15",
+                                    "description": "optional Items per page.",
+                                    "disabled": false
+                                }
+                            ],
+                            "raw": "{{baseUrl}}\/api\/v1\/shops?lat=41.3111&lng=69.2797&radius=5&status=active&per_page=15"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Shops retrieved successfully\",\n  \"data\": {\n    \"current_page\": 1,\n    \"data\": [\n      {\n        \"id\": 1,\n        \"name\": \"Barber Shop 1\",\n        \"address\": \"Tashkent, Chilonzor\",\n        \"phone\": \"+998901234567\",\n        \"status\": \"active\",\n        \"location_lat\": 41.3111,\n        \"location_lng\": 69.2797,\n        \"owner\": {\n          \"id\": 2,\n          \"name\": \"Shop Owner\"\n        },\n        \"subscription_plan\": {\n          \"id\": 1,\n          \"name\": \"Premium\"\n        }\n      }\n    ],\n    \"total\": 10,\n    \"per_page\": 15\n  }\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Show single shop.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/shops\/:shop_id",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/shops\/:shop_id",
+                            "variable": [
+                                {
+                                    "id": "shop_id",
+                                    "key": "shop_id",
+                                    "value": "1",
+                                    "description": "The ID of the shop."
+                                },
+                                {
+                                    "id": "shop",
+                                    "key": "shop",
+                                    "value": "1",
+                                    "description": "Shop ID."
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Shop retrieved successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"Barber Shop 1\",\n    \"address\": \"Tashkent, Chilonzor\",\n    \"phone\": \"+998901234567\",\n    \"status\": \"active\",\n    \"location_lat\": 41.3111,\n    \"location_lng\": 69.2797,\n    \"owner\": {\n      \"id\": 2,\n      \"name\": \"Shop Owner\"\n    },\n    \"subscription_plan\": {\n      \"id\": 1,\n      \"name\": \"Premium\",\n      \"price\": 500000\n    },\n    \"services\": [\n      {\n        \"id\": 1,\n        \"name\": \"Haircut\",\n        \"price\": 50000,\n        \"duration_minutes\": 30\n      }\n    ],\n    \"workers\": [\n      {\n        \"id\": 3,\n        \"name\": \"Barber Name\"\n      }\n    ]\n  }\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 404,
+                            "body": "{\n  \"success\": false,\n  \"message\": \"Resource not found\"\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "List workers of a shop.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/shops\/:shop_id\/workers",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/shops\/:shop_id\/workers",
+                            "variable": [
+                                {
+                                    "id": "shop_id",
+                                    "key": "shop_id",
+                                    "value": "1",
+                                    "description": "The ID of the shop."
+                                },
+                                {
+                                    "id": "shop",
+                                    "key": "shop",
+                                    "value": "1",
+                                    "description": "Shop ID."
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Workers retrieved successfully\",\n  \"data\": [\n    {\n      \"id\": 3,\n      \"name\": \"Barber Name\",\n      \"phone\": \"+998901234567\",\n      \"role\": \"barber\",\n      \"rating_avg\": 4.5,\n      \"services\": [\n        {\n          \"id\": 1,\n          \"name\": \"Haircut\"\n        }\n      ]\n    }\n  ]\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Get active subscription of a shop.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/shops\/:shop_id\/subscription",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/shops\/:shop_id\/subscription",
+                            "variable": [
+                                {
+                                    "id": "shop_id",
+                                    "key": "shop_id",
+                                    "value": "1",
+                                    "description": "The ID of the shop."
+                                },
+                                {
+                                    "id": "shop",
+                                    "key": "shop",
+                                    "value": "1",
+                                    "description": "Shop ID."
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Subscription retrieved successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"shop_id\": 1,\n    \"subscription_plan_id\": 1,\n    \"started_at\": \"2025-01-01 00:00:00\",\n    \"expires_at\": \"2025-02-01 00:00:00\",\n    \"status\": \"active\",\n    \"subscription_plan\": {\n      \"id\": 1,\n      \"name\": \"Premium\",\n      \"price\": 500000,\n      \"duration_days\": 30\n    }\n  }\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Subscription retrieved successfully\",\n  \"data\": null\n}",
+                            "name": ""
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Stats",
+            "description": "",
+            "item": [
+                {
+                    "name": "User daily stats for a given month (for charts).",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/stats\/me\/daily",
+                            "query": [
+                                {
+                                    "key": "month",
+                                    "value": "2025-02",
+                                    "description": "Year-month in Y-m format.",
+                                    "disabled": false
+                                }
+                            ],
+                            "raw": "{{baseUrl}}\/api\/v1\/stats\/me\/daily?month=2025-02"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"month\":\"2025-12\"}"
+                        },
+                        "description": "Flutter misol:\n GET \/api\/v1\/stats\/me\/daily?month=2025-02"
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"User daily stats retrieved successfully\",\n  \"data\": {\n    \"month\": \"2025-02\",\n    \"points\": [\n      { \"date\": \"2025-02-01\", \"orders\": 2, \"revenue\": 100000 },\n      { \"date\": \"2025-02-02\", \"orders\": 3, \"revenue\": 150000 }\n    ],\n    \"totals\": {\n      \"orders\": 25,\n      \"revenue\": 1250000\n    }\n  }\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 422,
+                            "body": "{\n  \"success\": false,\n  \"message\": \"Validation error\",\n  \"errors\": {\n    \"month\": [\"The month field is required.\"]\n  }\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "User monthly stats for a given year (for charts + comparison).",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/stats\/me\/monthly",
+                            "query": [
+                                {
+                                    "key": "year",
+                                    "value": "2025",
+                                    "description": "Year.",
+                                    "disabled": false
+                                }
+                            ],
+                            "raw": "{{baseUrl}}\/api\/v1\/stats\/me\/monthly?year=2025"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"year\":1}"
+                        },
+                        "description": "Flutter misol:\n GET \/api\/v1\/stats\/me\/monthly?year=2025"
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"User monthly stats retrieved successfully\",\n  \"data\": {\n    \"year\": 2025,\n    \"currency\": \"UZS\",\n    \"points\": [\n      { \"month\": \"2025-01\", \"orders\": 15, \"revenue\": 750000 },\n      { \"month\": \"2025-02\", \"orders\": 25, \"revenue\": 1250000 }\n    ],\n    \"totals\": {\n      \"orders\": 40,\n      \"revenue\": 2000000\n    },\n    \"current_month\": { \"month\": \"2025-02\", \"orders\": 25, \"revenue\": 1250000 },\n    \"comparison\": {\n      \"previous_year\": 2024,\n      \"previous_revenue\": 1500000,\n      \"change_percent\": 33.3\n    }\n  }\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 422,
+                            "body": "{\n  \"success\": false,\n  \"message\": \"Validation error\",\n  \"errors\": {\n    \"year\": [\"The year field is required.\"]\n  }\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Admin global monthly stats for all shops.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/stats\/admin\/monthly",
+                            "query": [
+                                {
+                                    "key": "year",
+                                    "value": "2025",
+                                    "description": "Year.",
+                                    "disabled": false
+                                }
+                            ],
+                            "raw": "{{baseUrl}}\/api\/v1\/stats\/admin\/monthly?year=2025"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"year\":1}"
+                        },
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Admin monthly stats retrieved successfully\",\n  \"data\": {\n    \"year\": 2025,\n    \"currency\": \"UZS\",\n    \"points\": [\n      { \"month\": \"2025-01\", \"orders\": 150, \"revenue\": 7500000, \"shops\": 10 },\n      { \"month\": \"2025-02\", \"orders\": 200, \"revenue\": 10000000, \"shops\": 12 }\n    ],\n    \"totals\": {\n      \"orders\": 350,\n      \"revenue\": 17500000,\n      \"shops\": 12\n    },\n    \"current_month\": { \"month\": \"2025-02\", \"orders\": 200, \"revenue\": 10000000 },\n    \"comparison\": {\n      \"previous_year\": 2024,\n      \"previous_revenue\": 8000000,\n      \"change_percent\": 25.0\n    }\n  }\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 422,
+                            "body": "{\n  \"success\": false,\n  \"message\": \"Validation error\",\n  \"errors\": {\n    \"year\": [\"The year field is required.\"]\n  }\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Admin subscription income by month (all shops).",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/stats\/admin\/subscriptions",
+                            "query": [
+                                {
+                                    "key": "year",
+                                    "value": "2025",
+                                    "description": "Year.",
+                                    "disabled": false
+                                }
+                            ],
+                            "raw": "{{baseUrl}}\/api\/v1\/stats\/admin\/subscriptions?year=2025"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"year\":1}"
+                        },
+                        "description": "Bu endpoint platform uchun sartaroshxonalarning\noylik to'lovlari orqali olinadigan daromadni qaytaradi."
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Admin subscription monthly stats retrieved successfully\",\n  \"data\": {\n    \"year\": 2025,\n    \"currency\": \"UZS\",\n    \"points\": [\n      { \"month\": \"2025-01\", \"revenue\": 1500000 },\n      { \"month\": \"2025-02\", \"revenue\": 2100000 }\n    ],\n    \"totals\": {\n      \"revenue\": 3600000\n    },\n    \"current_month\": { \"month\": \"2025-02\", \"revenue\": 2100000 },\n    \"comparison\": {\n      \"previous_year\": 2024,\n      \"previous_revenue\": 2800000,\n      \"change_percent\": 28.6\n    }\n  }\n}",
+                            "name": ""
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Walk-in",
+            "description": "",
+            "item": [
+                {
+                    "name": "List walk-in sessions for current user (barber).",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/walkin",
+                            "query": [
+                                {
+                                    "key": "active",
+                                    "value": "1",
+                                    "description": "optional If true, returns only active sessions.",
+                                    "disabled": false
+                                }
+                            ],
+                            "raw": "{{baseUrl}}\/api\/v1\/walkin?active=1"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Walk-in sessions retrieved successfully\",\n  \"data\": [\n    {\n      \"id\": 5,\n      \"barber_id\": 3,\n      \"client_name\": \"Ali\",\n      \"client_phone\": \"+998901234567\",\n      \"status\": \"in_progress\",\n      \"price\": null,\n      \"started_at\": \"2025-02-10 15:00:00\",\n      \"finished_at\": null,\n      \"barber\": {\n        \"id\": 3,\n        \"name\": \"Barber Name\"\n      }\n    }\n  ]\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Start a new walk-in session.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/walkin",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/walkin"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"client_name\":\"Ali\",\"client_phone\":\"+998901234567\",\"services\":[1,2,3]}"
+                        },
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 201,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Walk-in session started successfully\",\n  \"data\": {\n    \"id\": 5,\n    \"barber_id\": 3,\n    \"client_name\": \"Ali\",\n    \"client_phone\": \"+998901234567\",\n    \"status\": \"pending\",\n    \"price\": null,\n    \"started_at\": null,\n    \"finished_at\": null,\n    \"created_at\": \"2025-02-10 15:00:00\"\n  }\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 422,
+                            "body": "{\n  \"success\": false,\n  \"message\": \"Validation error\",\n  \"errors\": {\n    \"client_name\": [\"The client name field is required.\"],\n    \"services\": [\"The services field is required.\"]\n  }\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Show single walk-in session.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/walkin\/:walkin_id",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/walkin\/:walkin_id",
+                            "variable": [
+                                {
+                                    "id": "walkin_id",
+                                    "key": "walkin_id",
+                                    "value": "1",
+                                    "description": "The ID of the walkin."
+                                },
+                                {
+                                    "id": "walkin",
+                                    "key": "walkin",
+                                    "value": "5",
+                                    "description": "Walk-in ID."
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Walk-in session retrieved successfully\",\n  \"data\": {\n    \"id\": 5,\n    \"barber_id\": 3,\n    \"client_name\": \"Ali\",\n    \"client_phone\": \"+998901234567\",\n    \"status\": \"in_progress\",\n    \"price\": null,\n    \"started_at\": \"2025-02-10 15:00:00\",\n    \"finished_at\": null,\n    \"barber\": {\n      \"id\": 3,\n      \"name\": \"Barber Name\",\n      \"phone\": \"+998901234567\"\n    }\n  }\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Mark walk-in session as started.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/walkin\/:walkin_id\/start",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/walkin\/:walkin_id\/start",
+                            "variable": [
+                                {
+                                    "id": "walkin_id",
+                                    "key": "walkin_id",
+                                    "value": "1",
+                                    "description": "The ID of the walkin."
+                                },
+                                {
+                                    "id": "walkin",
+                                    "key": "walkin",
+                                    "value": "5",
+                                    "description": "Walk-in ID."
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Walk-in session started\",\n  \"data\": {\n    \"id\": 5,\n    \"status\": \"in_progress\",\n    \"started_at\": \"2025-02-10 15:00:00\"\n  }\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 400,
+                            "body": "{\n  \"success\": false,\n  \"message\": \"Walk-in session cannot be started. It must be in pending status.\"\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Finish walk-in session.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/walkin\/:walkin_id\/finish",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/walkin\/:walkin_id\/finish",
+                            "variable": [
+                                {
+                                    "id": "walkin_id",
+                                    "key": "walkin_id",
+                                    "value": "1",
+                                    "description": "The ID of the walkin."
+                                },
+                                {
+                                    "id": "walkin",
+                                    "key": "walkin",
+                                    "value": "5",
+                                    "description": "Walk-in ID."
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"price\":75000}"
+                        },
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Walk-in session finished successfully\",\n  \"data\": {\n    \"id\": 5,\n    \"status\": \"completed\",\n    \"price\": 75000,\n    \"finished_at\": \"2025-02-10 15:30:00\"\n  }\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 400,
+                            "body": "{\n  \"success\": false,\n  \"message\": \"Walk-in session cannot be finished. It must be in progress.\"\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 422,
+                            "body": "{\n  \"success\": false,\n  \"message\": \"Validation error\",\n  \"errors\": {\n    \"price\": [\"The price field is required.\"]\n  }\n}",
+                            "name": ""
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "auth": {
+        "type": "noauth"
+    }
+}
