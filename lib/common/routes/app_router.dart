@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/common/utils/storage.dart';
 import 'package:mobile/features/auth/screens/login_screen.dart';
 import 'package:mobile/features/auth/screens/register_screen.dart';
+import 'package:mobile/features/barbers/screens/barber_booking_screen.dart';
+import 'package:mobile/features/barbers/models/barber.dart';
 import 'package:mobile/features/barbers/screens/barber_schedule_screen.dart';
 import 'package:mobile/features/chats/screens/chat_list_screen.dart';
 import 'package:mobile/features/chats/screens/chat_messages_screen.dart';
@@ -16,6 +18,7 @@ import 'package:mobile/features/services/screens/services_list_screen.dart';
 import 'package:mobile/features/shops/screens/shop_detail_screen.dart';
 import 'package:mobile/features/shops/screens/shops_list_screen.dart';
 import 'package:mobile/features/shops/screens/workers_list_screen.dart';
+import 'package:mobile/features/notifications/screens/notifications_screen.dart';
 import 'package:mobile/features/stats/screens/stats_screen.dart';
 import 'package:mobile/features/walkin/screens/walkin_list_screen.dart';
 import 'package:mobile/features/walkin/screens/walkin_session_screen.dart';
@@ -85,6 +88,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const OrdersListScreen(),
       ),
       GoRoute(
+        path: '/notifications',
+        builder: (context, state) => const NotificationsScreen(),
+      ),
+      GoRoute(
         path: '/orders/new',
         builder: (context, state) => const NewOrderScreen(),
       ),
@@ -93,6 +100,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final id = int.parse(state.pathParameters['id']!);
           return OrderDetailScreen(orderId: id);
+        },
+      ),
+      GoRoute(
+        path: '/barbers/:id/book',
+        builder: (context, state) {
+          final id = int.parse(state.pathParameters['id']!);
+          final extra = state.extra;
+          final barber = extra is Barber ? extra : null;
+          return BarberBookingScreen(
+            barberId: id,
+            barber: barber,
+          );
         },
       ),
       GoRoute(

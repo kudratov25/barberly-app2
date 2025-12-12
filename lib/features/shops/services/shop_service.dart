@@ -9,6 +9,24 @@ class ShopService {
 
   ShopService(this._apiClient);
 
+  double? _toDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
+  }
+
+  Map<String, dynamic> _normalizeShopJson(Map<String, dynamic> json) {
+    final normalized = Map<String, dynamic>.from(json);
+    if (normalized.containsKey('location_lat')) {
+      normalized['location_lat'] = _toDouble(normalized['location_lat']);
+    }
+    if (normalized.containsKey('location_lng')) {
+      normalized['location_lng'] = _toDouble(normalized['location_lng']);
+    }
+    return normalized;
+  }
+
   /// List shops with optional filters
   Future<PaginatedResponse<Shop>> listShops({
     double? lat,
@@ -32,7 +50,9 @@ class ShopService {
 
       return PaginatedResponse<Shop>.fromJson(
         response.data['data'],
-        (json) => Shop.fromJson(json as Map<String, dynamic>),
+        (json) => Shop.fromJson(
+          _normalizeShopJson(json as Map<String, dynamic>),
+        ),
       );
     } on DioException catch (e) {
       throw _handleError(e);
@@ -43,7 +63,11 @@ class ShopService {
   Future<Shop> getShop(int id) async {
     try {
       final response = await _apiClient.dio.get(ApiEndpoints.shop(id));
-      return Shop.fromJson(response.data['data']);
+      return Shop.fromJson(
+        _normalizeShopJson(
+          response.data['data'] as Map<String, dynamic>,
+        ),
+      );
     } on DioException catch (e) {
       throw _handleError(e);
     }

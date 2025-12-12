@@ -470,6 +470,10 @@ mixin _$ChatMessage {
   String get messageType => throw _privateConstructorUsedError;
   @JsonKey(name: 'order_id')
   int? get orderId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'reply_to_id')
+  int? get replyToId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'reply_to')
+  ChatMessage? get replyTo => throw _privateConstructorUsedError;
   @JsonKey(name: 'is_read')
   bool get isRead => throw _privateConstructorUsedError;
   @JsonKey(name: 'created_at')
@@ -500,11 +504,14 @@ abstract class $ChatMessageCopyWith<$Res> {
     String message,
     @JsonKey(name: 'message_type') String messageType,
     @JsonKey(name: 'order_id') int? orderId,
+    @JsonKey(name: 'reply_to_id') int? replyToId,
+    @JsonKey(name: 'reply_to') ChatMessage? replyTo,
     @JsonKey(name: 'is_read') bool isRead,
     @JsonKey(name: 'created_at') String createdAt,
     ChatUser? user,
   });
 
+  $ChatMessageCopyWith<$Res>? get replyTo;
   $ChatUserCopyWith<$Res>? get user;
 }
 
@@ -529,6 +536,8 @@ class _$ChatMessageCopyWithImpl<$Res, $Val extends ChatMessage>
     Object? message = null,
     Object? messageType = null,
     Object? orderId = freezed,
+    Object? replyToId = freezed,
+    Object? replyTo = freezed,
     Object? isRead = null,
     Object? createdAt = null,
     Object? user = freezed,
@@ -559,6 +568,14 @@ class _$ChatMessageCopyWithImpl<$Res, $Val extends ChatMessage>
                 ? _value.orderId
                 : orderId // ignore: cast_nullable_to_non_nullable
                       as int?,
+            replyToId: freezed == replyToId
+                ? _value.replyToId
+                : replyToId // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            replyTo: freezed == replyTo
+                ? _value.replyTo
+                : replyTo // ignore: cast_nullable_to_non_nullable
+                      as ChatMessage?,
             isRead: null == isRead
                 ? _value.isRead
                 : isRead // ignore: cast_nullable_to_non_nullable
@@ -574,6 +591,20 @@ class _$ChatMessageCopyWithImpl<$Res, $Val extends ChatMessage>
           )
           as $Val,
     );
+  }
+
+  /// Create a copy of ChatMessage
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $ChatMessageCopyWith<$Res>? get replyTo {
+    if (_value.replyTo == null) {
+      return null;
+    }
+
+    return $ChatMessageCopyWith<$Res>(_value.replyTo!, (value) {
+      return _then(_value.copyWith(replyTo: value) as $Val);
+    });
   }
 
   /// Create a copy of ChatMessage
@@ -607,11 +638,15 @@ abstract class _$$ChatMessageImplCopyWith<$Res>
     String message,
     @JsonKey(name: 'message_type') String messageType,
     @JsonKey(name: 'order_id') int? orderId,
+    @JsonKey(name: 'reply_to_id') int? replyToId,
+    @JsonKey(name: 'reply_to') ChatMessage? replyTo,
     @JsonKey(name: 'is_read') bool isRead,
     @JsonKey(name: 'created_at') String createdAt,
     ChatUser? user,
   });
 
+  @override
+  $ChatMessageCopyWith<$Res>? get replyTo;
   @override
   $ChatUserCopyWith<$Res>? get user;
 }
@@ -636,6 +671,8 @@ class __$$ChatMessageImplCopyWithImpl<$Res>
     Object? message = null,
     Object? messageType = null,
     Object? orderId = freezed,
+    Object? replyToId = freezed,
+    Object? replyTo = freezed,
     Object? isRead = null,
     Object? createdAt = null,
     Object? user = freezed,
@@ -666,6 +703,14 @@ class __$$ChatMessageImplCopyWithImpl<$Res>
             ? _value.orderId
             : orderId // ignore: cast_nullable_to_non_nullable
                   as int?,
+        replyToId: freezed == replyToId
+            ? _value.replyToId
+            : replyToId // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        replyTo: freezed == replyTo
+            ? _value.replyTo
+            : replyTo // ignore: cast_nullable_to_non_nullable
+                  as ChatMessage?,
         isRead: null == isRead
             ? _value.isRead
             : isRead // ignore: cast_nullable_to_non_nullable
@@ -693,6 +738,8 @@ class _$ChatMessageImpl implements _ChatMessage {
     required this.message,
     @JsonKey(name: 'message_type') required this.messageType,
     @JsonKey(name: 'order_id') this.orderId,
+    @JsonKey(name: 'reply_to_id') this.replyToId,
+    @JsonKey(name: 'reply_to') this.replyTo,
     @JsonKey(name: 'is_read') required this.isRead,
     @JsonKey(name: 'created_at') required this.createdAt,
     this.user,
@@ -718,6 +765,12 @@ class _$ChatMessageImpl implements _ChatMessage {
   @JsonKey(name: 'order_id')
   final int? orderId;
   @override
+  @JsonKey(name: 'reply_to_id')
+  final int? replyToId;
+  @override
+  @JsonKey(name: 'reply_to')
+  final ChatMessage? replyTo;
+  @override
   @JsonKey(name: 'is_read')
   final bool isRead;
   @override
@@ -728,7 +781,7 @@ class _$ChatMessageImpl implements _ChatMessage {
 
   @override
   String toString() {
-    return 'ChatMessage(id: $id, chatId: $chatId, userId: $userId, message: $message, messageType: $messageType, orderId: $orderId, isRead: $isRead, createdAt: $createdAt, user: $user)';
+    return 'ChatMessage(id: $id, chatId: $chatId, userId: $userId, message: $message, messageType: $messageType, orderId: $orderId, replyToId: $replyToId, replyTo: $replyTo, isRead: $isRead, createdAt: $createdAt, user: $user)';
   }
 
   @override
@@ -743,6 +796,9 @@ class _$ChatMessageImpl implements _ChatMessage {
             (identical(other.messageType, messageType) ||
                 other.messageType == messageType) &&
             (identical(other.orderId, orderId) || other.orderId == orderId) &&
+            (identical(other.replyToId, replyToId) ||
+                other.replyToId == replyToId) &&
+            (identical(other.replyTo, replyTo) || other.replyTo == replyTo) &&
             (identical(other.isRead, isRead) || other.isRead == isRead) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
@@ -759,6 +815,8 @@ class _$ChatMessageImpl implements _ChatMessage {
     message,
     messageType,
     orderId,
+    replyToId,
+    replyTo,
     isRead,
     createdAt,
     user,
@@ -786,6 +844,8 @@ abstract class _ChatMessage implements ChatMessage {
     required final String message,
     @JsonKey(name: 'message_type') required final String messageType,
     @JsonKey(name: 'order_id') final int? orderId,
+    @JsonKey(name: 'reply_to_id') final int? replyToId,
+    @JsonKey(name: 'reply_to') final ChatMessage? replyTo,
     @JsonKey(name: 'is_read') required final bool isRead,
     @JsonKey(name: 'created_at') required final String createdAt,
     final ChatUser? user,
@@ -810,6 +870,12 @@ abstract class _ChatMessage implements ChatMessage {
   @override
   @JsonKey(name: 'order_id')
   int? get orderId;
+  @override
+  @JsonKey(name: 'reply_to_id')
+  int? get replyToId;
+  @override
+  @JsonKey(name: 'reply_to')
+  ChatMessage? get replyTo;
   @override
   @JsonKey(name: 'is_read')
   bool get isRead;

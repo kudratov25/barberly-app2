@@ -74,3 +74,4 @@ class ShopWorker with _$ShopWorker {
       _$ShopWorkerFromJson(json);
 }
 
+

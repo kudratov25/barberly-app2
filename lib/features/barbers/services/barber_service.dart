@@ -9,6 +9,30 @@ class BarberService {
 
   BarberService(this._apiClient);
 
+  double? _toDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
+  }
+
+  Map<String, dynamic> _normalizeBarberJson(Map<String, dynamic> json) {
+    final normalized = Map<String, dynamic>.from(json);
+    if (normalized.containsKey('location_lat')) {
+      normalized['location_lat'] = _toDouble(normalized['location_lat']);
+    }
+    if (normalized.containsKey('location_lng')) {
+      normalized['location_lng'] = _toDouble(normalized['location_lng']);
+    }
+     if (normalized.containsKey('rating_avg')) {
+       normalized['rating_avg'] = _toDouble(normalized['rating_avg']);
+     }
+     if (normalized.containsKey('distance')) {
+       normalized['distance'] = _toDouble(normalized['distance']);
+     }
+    return normalized;
+  }
+
   /// Get nearby barbers
   Future<List<Barber>> getNearestBarbers({
     required double lat,
@@ -32,8 +56,27 @@ class BarberService {
       );
 
       return (response.data['data'] as List)
-          .map((json) => Barber.fromJson(json))
+          .map(
+            (json) => Barber.fromJson(
+              _normalizeBarberJson(json as Map<String, dynamic>),
+            ),
+          )
           .toList();
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// Get single barber by ID
+  Future<Barber> getBarber(int id) async {
+    try {
+      final response =
+          await _apiClient.dio.get('${ApiEndpoints.barbersNearest}/$id');
+      return Barber.fromJson(
+        _normalizeBarberJson(
+          response.data['data'] as Map<String, dynamic>,
+        ),
+      );
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -58,7 +101,11 @@ class BarberService {
         ApiEndpoints.barbersStatus,
         data: {'status': status},
       );
-      return Barber.fromJson(response.data['data']);
+      return Barber.fromJson(
+        _normalizeBarberJson(
+          response.data['data'] as Map<String, dynamic>,
+        ),
+      );
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -74,7 +121,11 @@ class BarberService {
         ApiEndpoints.barbersLocation,
         data: {'lat': lat, 'lng': lng},
       );
-      return Barber.fromJson(response.data['data']);
+      return Barber.fromJson(
+        _normalizeBarberJson(
+          response.data['data'] as Map<String, dynamic>,
+        ),
+      );
     } on DioException catch (e) {
       throw _handleError(e);
     }

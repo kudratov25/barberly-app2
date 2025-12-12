@@ -1,191 +1,661 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile/features/chats/screens/chat_list_screen.dart';
-import 'package:mobile/features/orders/screens/orders_list_screen.dart';
-import 'package:mobile/features/profile/screens/profile_screen.dart';
-import 'package:mobile/features/shops/screens/shops_list_screen.dart';
+import 'package:mobile/common/providers/providers.dart';
+import 'package:mobile/features/barbers/models/barber.dart';
+import 'package:mobile/features/orders/models/order.dart';
+import 'package:mobile/features/shops/services/shop_service.dart';
 
-/// Home screen with bottom navigation
-class HomeScreen extends StatefulWidget {
+/// Home Dashboard - Main screen with barber list and user info
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 0;
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  List<Barber>? _barbers;
+  bool _isLoading = true;
+  String? _error;
 
-  final List<Widget> _screens = [
-    const _HomeTab(),
-    const _ShopsTab(),
-    const _OrdersTab(),
-    const _ChatsTab(),
-    const _ProfileTab(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      // Get user location (you would use geolocator package in production)
+      // For now, using sample coordinates
+      const lat = 41.2995;
+      const lng = 69.2401;
+
+      final barbers = await ref.read(barberServiceProvider).getNearestBarbers(
+            lat: lat,
+            lng: lng,
+          );
+
+      setState(() {
+        _barbers = barbers;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final userAsync = ref.watch(currentUserProvider);
+
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
+      backgroundColor: const Color(0xFFFAFAFA),
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: _loadData,
+          child: CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _Header(userAsync: userAsync, ref: ref),
+                      const SizedBox(height: 16),
+                      _NextAppointmentSection(ref: ref),
+                      const SizedBox(height: 20),
+                      _QuickActionsRow(),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Popular barbers (horizontal)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: const [
+                      Text(
+                        'Popular Barbers',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF212121),
+                    ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: 190,
+                  child: _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _error != null
+                          ? Center(child: Text(_error!))
+                          : (_barbers == null || _barbers!.isEmpty)
+                              ? const Center(child: Text('No barbers found'))
+                              : Builder(
+                                  builder: (context) {
+                                    final popularBarbers = [..._barbers!]
+                                      ..sort(
+                                        (a, b) =>
+                                            (b.ratingAvg ?? 0).compareTo(
+                                          a.ratingAvg ?? 0,
+                                        ),
+                                      );
+                                    final count = popularBarbers.length > 10
+                                        ? 10
+                                        : popularBarbers.length;
+
+                                    return ListView.separated(
+                                      padding: const EdgeInsets.fromLTRB(
+                                        16,
+                                        12,
+                                        16,
+                                        24,
+                                      ),
+                                      scrollDirection: Axis.horizontal,
+                                      itemCount: count,
+                                      separatorBuilder: (_, __) =>
+                                          const SizedBox(width: 12),
+                                      itemBuilder: (context, index) {
+                                        final barber = popularBarbers[index];
+                                        return _BarberHorizontalCard(
+                                          barber: barber,
+                                        );
+                      },
+                                    );
+                                  },
+                    ),
+                  ),
+                ),
+
+              // Stats section
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: const _StatsCard(),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Home',
+      bottomNavigationBar: const _BottomNavBar(currentIndex: 0),
+    );
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+}
+
+class _BarberHorizontalCard extends StatelessWidget {
+  final Barber barber;
+
+  const _BarberHorizontalCard({required this.barber});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      elevation: 4,
+      shadowColor: Colors.black.withOpacity(0.06),
+      child: InkWell(
+        onTap: () => context.push('/barbers/${barber.id}/book'),
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          width: 220,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+              Container(
+                    width: 48,
+                    height: 48,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [Color(0xFF0A84FF), Color(0xFF4DA8FF)],
+                        ),
+                    ),
+                    child: const Icon(Icons.person, color: Colors.white),
+              ),
+                  const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      barber.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                            fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF212121),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                      Row(
+                      children: [
+                            if (barber.ratingAvg != null) ...[
+                              const Icon(Icons.star,
+                                  size: 14, color: Color(0xFFFFC107)),
+                              const SizedBox(width: 4),
+                              Text(
+                                barber.ratingAvg!.toStringAsFixed(1),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF757575),
+                                ),
+                              ),
+                            ],
+                            const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                                vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: barber.scheduleStatus == 'online'
+                                ? Colors.green.shade50
+                                : Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                                barber.scheduleStatus == 'online'
+                                    ? 'Online'
+                                    : 'Offline',
+                            style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                              color: barber.scheduleStatus == 'online'
+                                      ? Colors.green[700]
+                                      : Colors.grey[700],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () =>
+                      context.push('/barbers/${barber.id}/book'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    backgroundColor: const Color(0xFF0A84FF),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                  child: const Text(
+                    'Book',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+              ),
+            ],
           ),
-          NavigationDestination(
-            icon: Icon(Icons.store_outlined),
-            selectedIcon: Icon(Icons.store),
-            label: 'Shops',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.receipt_long_outlined),
-            selectedIcon: Icon(Icons.receipt_long),
-            label: 'Orders',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.chat_bubble_outline),
-            selectedIcon: Icon(Icons.chat_bubble),
-            label: 'Chats',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
+        ),
       ),
     );
   }
 }
 
-class _HomeTab extends StatelessWidget {
-  const _HomeTab();
+class _Header extends StatelessWidget {
+  final AsyncValue userAsync;
+  final WidgetRef ref;
+
+  const _Header({required this.userAsync, required this.ref});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Barberly'),
+    return Row(
+      children: [
+        Container(
+          width: 52,
+          height: 52,
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              colors: [Color(0xFF0A84FF), Color(0xFF4DA8FF)],
+            ),
+          ),
+          child: userAsync.when(
+            data: (user) => Center(
+              child: Text(
+                user.name.isNotEmpty ? user.name[0].toUpperCase() : 'C',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            loading: () => const SizedBox(),
+            error: (_, __) => const Icon(Icons.person,
+                color: Colors.white, size: 26),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              userAsync.when(
+                data: (user) => Text(
+                  user.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF111827),
+                  ),
+                ),
+                loading: () => const Text(
+                  'Loading...',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF111827),
+                  ),
+                ),
+                error: (_, __) => const Text(
+                  'Client',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF111827),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 2),
+              const Text(
+                'Client',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Color(0xFF6B7280),
+                ),
+              ),
+            ],
+          ),
+        ),
+        FutureBuilder<PaginatedResponse<Order>>(
+          future: ref
+              .read(orderServiceProvider)
+              .listOrders(role: 'client'),
+          builder: (context, snapshot) {
+            int newCount = 0;
+            if (snapshot.hasData) {
+              newCount = snapshot.data!.data
+                  .where((order) =>
+                      order.status.toLowerCase() == 'pending' ||
+                      order.status.toLowerCase() == 'in_progress')
+                  .length;
+            }
+            return IconButton(
+              onPressed: () => context.push('/notifications'),
+              icon: Badge(
+                backgroundColor: Colors.red,
+                label: Text(
+                  '$newCount',
+                  style: const TextStyle(fontSize: 10),
+                ),
+                isLabelVisible: newCount > 0,
+                child: const Icon(
+                  Icons.notifications_none_rounded,
+                  size: 26,
+                  color: Color(0xFF111827),
+                ),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _NextAppointmentSection extends StatelessWidget {
+  final WidgetRef ref;
+
+  const _NextAppointmentSection({required this.ref});
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<PaginatedResponse<Order>>(
+      future: ref.read(orderServiceProvider).listOrders(role: 'client'),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox(
+            height: 96,
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (!snapshot.hasData || snapshot.data!.data.isEmpty) {
+          return _EmptyNextAppointmentCard();
+        }
+
+        // For simplicity, take the first order as "next"
+        final order = snapshot.data!.data.first;
+        return _NextAppointmentCard(order: order);
+      },
+    );
+  }
+}
+
+class _NextAppointmentCard extends StatelessWidget {
+  final Order order;
+
+  const _NextAppointmentCard({required this.order});
+
+  @override
+  Widget build(BuildContext context) {
+    DateTime? startDateTime;
+    try {
+      startDateTime = DateTime.parse(order.startTime);
+    } catch (_) {}
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      child: Stack(
         children: [
-          Card(
-            child: InkWell(
-              onTap: () => context.push('/shops'),
-              borderRadius: BorderRadius.circular(16),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.store,
-                      size: 48,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Find Shops',
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                          Text(
-                            'Browse nearby barbershops',
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Icon(Icons.chevron_right),
-                  ],
+          Positioned.fill(
+            left: 0,
+            child: Container(
+              width: 4,
+              decoration: const BoxDecoration(
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  bottomLeft: Radius.circular(20),
+                ),
+                gradient: LinearGradient(
+                  colors: [Color(0xFF0A84FF), Color(0xFF4DA8FF)],
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 16),
-          Card(
-            child: InkWell(
-              onTap: () => context.push('/orders/new'),
-              borderRadius: BorderRadius.circular(16),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.add_circle_outline,
-                      size: 48,
-                      color: Theme.of(context).colorScheme.primary,
+          Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [Color(0xFF0A84FF), Color(0xFF4DA8FF)],
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                  ),
+                  child: const Icon(
+                    Icons.person,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        order.barber?.name ?? 'Upcoming appointment',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF111827),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        order.service?.name ?? 'Service',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF6B7280),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
                         children: [
-                          Text(
-                            'New Order',
-                            style: Theme.of(context).textTheme.titleLarge,
+                          const Icon(
+                            Icons.calendar_today_outlined,
+                            size: 14,
+                            color: Color(0xFF6B7280),
                           ),
+                          const SizedBox(width: 4),
                           Text(
-                            'Book an appointment',
-                            style: Theme.of(context).textTheme.bodyMedium,
+                            startDateTime != null
+                                ? '${startDateTime.year}-${startDateTime.month.toString().padLeft(2, '0')}-${startDateTime.day.toString().padLeft(2, '0')} • ${startDateTime.hour.toString().padLeft(2, '0')}:${startDateTime.minute.toString().padLeft(2, '0')}'
+                                : order.startTime,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF6B7280),
+                            ),
                           ),
                         ],
                       ),
+                      const SizedBox(height: 4),
+                      if (order.shop != null)
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.store_mall_directory_outlined,
+                              size: 14,
+                              color: Color(0xFF6B7280),
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                order.shop!.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF6B7280),
+                                ),
+                              ),
+                            ),
+                      ],
                     ),
-                    const Icon(Icons.chevron_right),
                   ],
                 ),
               ),
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: () =>
+                      context.push('/orders/${order.id}'),
+                  icon: const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 18,
+                    color: Color(0xFF0A84FF),
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 16),
-          Card(
-            child: InkWell(
-              onTap: () => context.push('/orders'),
-              borderRadius: BorderRadius.circular(16),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.receipt_long,
-                      size: 48,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'My Orders',
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                          Text(
-                            'View your appointments',
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Icon(Icons.chevron_right),
-                  ],
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyNextAppointmentCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: const Color(0xFF0A84FF).withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.calendar_today_outlined,
+              color: Color(0xFF0A84FF),
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                Text(
+                  "You don't have any active bookings",
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF111827),
+                  ),
                 ),
+                SizedBox(height: 4),
+                Text(
+                  'Book your next haircut in a few taps.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF6B7280),
+                  ),
+                ),
+              ],
+                    ),
+                  ),
+          const SizedBox(width: 8),
+                  ElevatedButton(
+            onPressed: () => context.push('/shops'),
+                    style: ElevatedButton.styleFrom(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              backgroundColor: const Color(0xFF0A84FF),
+                      foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+            child: const Text(
+              'Book Now',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
@@ -195,39 +665,373 @@ class _HomeTab extends StatelessWidget {
   }
 }
 
-class _ShopsTab extends StatelessWidget {
-  const _ShopsTab();
+class _QuickActionsRow extends StatelessWidget {
+  const _QuickActionsRow();
 
   @override
   Widget build(BuildContext context) {
-    return const ShopsListScreen();
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: const [
+        _QuickActionButton(
+          icon: Icons.search,
+          label: 'Search Barbers',
+          route: '/shops',
+        ),
+        _QuickActionButton(
+          icon: Icons.store_mall_directory_outlined,
+          label: 'Nearby Shops',
+          route: '/shops',
+        ),
+        _QuickActionButton(
+          icon: Icons.calendar_today_outlined,
+          label: 'My Bookings',
+          route: '/orders',
+        ),
+      ],
+    );
   }
 }
 
-class _OrdersTab extends StatelessWidget {
-  const _OrdersTab();
+class _QuickActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String route;
+
+  const _QuickActionButton({
+    required this.icon,
+    required this.label,
+    required this.route,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return const OrdersListScreen();
+    return Expanded(
+      child: Column(
+        children: [
+          GestureDetector(
+            onTap: () => context.push(route),
+            child: Container(
+              width: 60,
+              height: 60,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [Color(0xFF0A84FF), Color(0xFF4DA8FF)],
+                ),
+              ),
+              child: Icon(
+                icon,
+                color: Colors.white,
+                size: 26,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFF4B5563),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
-class _ChatsTab extends StatelessWidget {
-  const _ChatsTab();
+class _StatsCard extends ConsumerWidget {
+  const _StatsCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return FutureBuilder<PaginatedResponse<Order>>(
+      future: ref
+          .read(orderServiceProvider)
+          .listOrders(role: 'client', perPage: 100),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: const SizedBox(
+              height: 80,
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          );
+        }
+
+        final orders = snapshot.hasData ? snapshot.data!.data : <Order>[];
+
+        final totalOrders = orders.length;
+        final totalSpent =
+            orders.fold<int>(0, (sum, order) => sum + order.price);
+
+        final serviceIds = <int>{};
+        for (final order in orders) {
+          if (order.service != null) {
+            serviceIds.add(order.service!.id);
+          }
+        }
+        final servicesUsed = serviceIds.length;
+
+        String mostBookedBarber = '-';
+        String mostUsedService = '-';
+        int thisMonthBookings = 0;
+
+        if (orders.isNotEmpty) {
+          final barberCounts = <String, int>{};
+          final serviceCounts = <String, int>{};
+          final now = DateTime.now();
+
+          for (final order in orders) {
+            if (order.barber?.name != null) {
+              final name = order.barber!.name;
+              barberCounts[name] = (barberCounts[name] ?? 0) + 1;
+            }
+            if (order.service?.name != null) {
+              final sName = order.service!.name;
+              serviceCounts[sName] = (serviceCounts[sName] ?? 0) + 1;
+            }
+
+            try {
+              final dt = DateTime.parse(order.startTime);
+              if (dt.year == now.year && dt.month == now.month) {
+                thisMonthBookings++;
+              }
+            } catch (_) {}
+          }
+
+          if (barberCounts.isNotEmpty) {
+            mostBookedBarber = barberCounts.entries
+                .reduce((a, b) => a.value >= b.value ? a : b)
+                .key;
+          }
+          if (serviceCounts.isNotEmpty) {
+            mostUsedService = serviceCounts.entries
+                .reduce((a, b) => a.value >= b.value ? a : b)
+                .key;
+          }
+        }
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 24,
+                offset: const Offset(0, 8),
+                      ),
+            ],
+                    ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Your Stats',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF111827),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  _StatsItem(
+                    label: 'Total orders',
+                    value: '$totalOrders',
+                  ),
+                  const SizedBox(width: 16),
+                  _StatsItem(
+                    label: 'Total spent',
+                    value: '${totalSpent} UZS',
+                  ),
+                  const SizedBox(width: 16),
+                  _StatsItem(
+                    label: 'Services used',
+                    value: '$servicesUsed',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _StatsRowLabelValue(
+                icon: Icons.person_outline,
+                label: 'Most booked barber',
+                value: mostBookedBarber,
+              ),
+              const SizedBox(height: 8),
+              _StatsRowLabelValue(
+                icon: Icons.content_cut,
+                label: 'Most used service',
+                value: mostUsedService,
+              ),
+              const SizedBox(height: 8),
+              _StatsRowLabelValue(
+                icon: Icons.bar_chart_outlined,
+                label: "This month's activity",
+                value: '$thisMonthBookings bookings',
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _StatsItem extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _StatsItem({
+    required this.label,
+    required this.value,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return const ChatListScreen();
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              color: Color(0xFF6B7280),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF0A84FF),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
-class _ProfileTab extends StatelessWidget {
-  const _ProfileTab();
+class _StatsRowLabelValue extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _StatsRowLabelValue({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return const ProfileScreen();
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: const Color(0xFF6B7280)),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 13,
+              color: Color(0xFF6B7280),
+            ),
+          ),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF111827),
+          ),
+        ),
+      ],
+    );
   }
 }
+
+class _BottomNavBar extends StatelessWidget {
+  final int currentIndex;
+
+  const _BottomNavBar({required this.currentIndex});
+
+  @override
+  Widget build(BuildContext context) {
+    return NavigationBar(
+      selectedIndex: currentIndex,
+      onDestinationSelected: (index) {
+        switch (index) {
+          case 0:
+            context.go('/home');
+            break;
+          case 1:
+            context.push('/shops');
+            break;
+          case 2:
+            context.push('/chats');
+            break;
+          case 3:
+            context.push('/orders');
+            break;
+          case 4:
+            context.push('/profile');
+            break;
+        }
+      },
+      destinations: const [
+        NavigationDestination(
+          icon: Icon(Icons.home_outlined),
+          selectedIcon: Icon(Icons.home),
+          label: 'Home',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.search_outlined),
+          selectedIcon: Icon(Icons.search),
+          label: 'Search',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.chat_bubble_outline),
+          selectedIcon: Icon(Icons.chat_bubble),
+          label: 'Chat',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.calendar_today_outlined),
+          selectedIcon: Icon(Icons.calendar_today),
+          label: 'Bookings',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.person_outline),
+          selectedIcon: Icon(Icons.person),
+          label: 'Profile',
+        ),
+      ],
+    );
+  }
+}
+
+// Provider for current user
+final currentUserProvider = FutureProvider((ref) async {
+  return await ref.read(authServiceProvider).getCurrentUser();
+});
 

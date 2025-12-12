@@ -44,6 +44,10 @@ _$ChatMessageImpl _$$ChatMessageImplFromJson(Map<String, dynamic> json) =>
       message: json['message'] as String,
       messageType: json['message_type'] as String,
       orderId: (json['order_id'] as num?)?.toInt(),
+      replyToId: (json['reply_to_id'] as num?)?.toInt(),
+      replyTo: json['reply_to'] == null
+          ? null
+          : ChatMessage.fromJson(json['reply_to'] as Map<String, dynamic>),
       isRead: json['is_read'] as bool,
       createdAt: json['created_at'] as String,
       user: json['user'] == null
@@ -59,6 +63,8 @@ Map<String, dynamic> _$$ChatMessageImplToJson(_$ChatMessageImpl instance) =>
       'message': instance.message,
       'message_type': instance.messageType,
       'order_id': instance.orderId,
+      'reply_to_id': instance.replyToId,
+      'reply_to': instance.replyTo,
       'is_read': instance.isRead,
       'created_at': instance.createdAt,
       'user': instance.user,

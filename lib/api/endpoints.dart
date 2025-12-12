@@ -3,7 +3,7 @@ class ApiEndpoints {
   // Update this to your Laravel backend URL (include port if needed)
   // For Laravel default: http://10.245.202.220:8000
   // For production: https://yourdomain.com
-  static const String baseUrl = 'http://10.245.202.220:8000';
+  static const String baseUrl = 'http://localhost:8000';
   static const String apiPrefix = '/api/v1';
 
   // Auth endpoints
@@ -46,6 +46,7 @@ class ApiEndpoints {
   static const String chats = '$apiPrefix/chats';
   static String chat(int id) => '$chats/$id';
   static String chatMessages(int id) => '$chats/$id/messages';
+  static String chatMessage(int chatId, int messageId) => '$chats/$chatId/messages/$messageId';
   static String chatRead(int id) => '$chats/$id/read';
 
   // Ratings endpoints

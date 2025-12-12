@@ -36,6 +36,8 @@ class ChatMessage with _$ChatMessage {
     required String message,
     @JsonKey(name: 'message_type') required String messageType,
     @JsonKey(name: 'order_id') int? orderId,
+    @JsonKey(name: 'reply_to_id') int? replyToId,
+    @JsonKey(name: 'reply_to') ChatMessage? replyTo,
     @JsonKey(name: 'is_read') required bool isRead,
     @JsonKey(name: 'created_at') required String createdAt,
     ChatUser? user,

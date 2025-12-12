@@ -14,9 +14,16 @@ class ChatService {
   Future<List<Chat>> listChats() async {
     try {
       final response = await _apiClient.dio.get(ApiEndpoints.chats);
-      return (response.data['data'] as List)
-          .map((json) => Chat.fromJson(json))
-          .toList();
+      return (response.data['data'] as List).map((json) {
+        final chatMap = Map<String, dynamic>.from(json as Map<String, dynamic>);
+        // Normalize latest_message if exists
+        if (chatMap['latest_message'] != null && chatMap['latest_message'] is Map) {
+          final latestMsgMap = Map<String, dynamic>.from(chatMap['latest_message'] as Map);
+          latestMsgMap['is_read'] = latestMsgMap['is_read'] ?? false;
+          chatMap['latest_message'] = latestMsgMap;
+        }
+        return Chat.fromJson(chatMap);
+      }).toList();
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -29,7 +36,14 @@ class ChatService {
         ApiEndpoints.chats,
         data: {'user_id': userId},
       );
-      return Chat.fromJson(response.data['data']);
+      final chatMap = Map<String, dynamic>.from(response.data['data'] as Map<String, dynamic>);
+      // Normalize latest_message if exists
+      if (chatMap['latest_message'] != null && chatMap['latest_message'] is Map) {
+        final latestMsgMap = Map<String, dynamic>.from(chatMap['latest_message'] as Map);
+        latestMsgMap['is_read'] = latestMsgMap['is_read'] ?? false;
+        chatMap['latest_message'] = latestMsgMap;
+      }
+      return Chat.fromJson(chatMap);
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -39,7 +53,14 @@ class ChatService {
   Future<Chat> getChat(int id) async {
     try {
       final response = await _apiClient.dio.get(ApiEndpoints.chat(id));
-      return Chat.fromJson(response.data['data']);
+      final chatMap = Map<String, dynamic>.from(response.data['data'] as Map<String, dynamic>);
+      // Normalize latest_message if exists
+      if (chatMap['latest_message'] != null && chatMap['latest_message'] is Map) {
+        final latestMsgMap = Map<String, dynamic>.from(chatMap['latest_message'] as Map);
+        latestMsgMap['is_read'] = latestMsgMap['is_read'] ?? false;
+        chatMap['latest_message'] = latestMsgMap;
+      }
+      return Chat.fromJson(chatMap);
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -61,7 +82,18 @@ class ChatService {
 
       return PaginatedResponse<ChatMessage>.fromJson(
         response.data['data'],
-        (json) => ChatMessage.fromJson(json as Map<String, dynamic>),
+        (json) {
+          final map = Map<String, dynamic>.from(json as Map<String, dynamic>);
+          // Backend sometimes may send null for is_read; normalize it to false
+          map['is_read'] = map['is_read'] ?? false;
+          // Normalize nested reply_to message if exists
+          if (map['reply_to'] != null && map['reply_to'] is Map) {
+            final replyToMap = Map<String, dynamic>.from(map['reply_to'] as Map);
+            replyToMap['is_read'] = replyToMap['is_read'] ?? false;
+            map['reply_to'] = replyToMap;
+          }
+          return ChatMessage.fromJson(map);
+        },
       );
     } on DioException catch (e) {
       throw _handleError(e);
@@ -74,6 +106,7 @@ class ChatService {
     required String message,
     String messageType = 'text',
     int? orderId,
+    int? replyToId,
   }) async {
     try {
       final response = await _apiClient.dio.post(
@@ -82,9 +115,60 @@ class ChatService {
           'message': message,
           'message_type': messageType,
           if (orderId != null) 'order_id': orderId,
+          if (replyToId != null) 'reply_to_id': replyToId,
         },
       );
-      return ChatMessage.fromJson(response.data['data']);
+      final raw = response.data['data'] as Map<String, dynamic>;
+      final map = Map<String, dynamic>.from(raw);
+      // Backend ba'zi hollarda is_read ni null yuborishi mumkin – xavfsiz default:
+      map['is_read'] = map['is_read'] ?? false;
+      // Normalize nested reply_to message if exists
+      if (map['reply_to'] != null && map['reply_to'] is Map) {
+        final replyToMap = Map<String, dynamic>.from(map['reply_to'] as Map);
+        replyToMap['is_read'] = replyToMap['is_read'] ?? false;
+        map['reply_to'] = replyToMap;
+      }
+      return ChatMessage.fromJson(map);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// Update a message
+  Future<ChatMessage> updateMessage({
+    required int chatId,
+    required int messageId,
+    required String message,
+  }) async {
+    try {
+      final response = await _apiClient.dio.patch(
+        ApiEndpoints.chatMessage(chatId, messageId),
+        data: {'message': message},
+      );
+      final raw = response.data['data'] as Map<String, dynamic>;
+      final map = Map<String, dynamic>.from(raw);
+      map['is_read'] = map['is_read'] ?? false;
+      // Normalize nested reply_to message if exists
+      if (map['reply_to'] != null && map['reply_to'] is Map) {
+        final replyToMap = Map<String, dynamic>.from(map['reply_to'] as Map);
+        replyToMap['is_read'] = replyToMap['is_read'] ?? false;
+        map['reply_to'] = replyToMap;
+      }
+      return ChatMessage.fromJson(map);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// Delete a message
+  Future<void> deleteMessage({
+    required int chatId,
+    required int messageId,
+  }) async {
+    try {
+      await _apiClient.dio.delete(
+        ApiEndpoints.chatMessage(chatId, messageId),
+      );
     } on DioException catch (e) {
       throw _handleError(e);
     }
