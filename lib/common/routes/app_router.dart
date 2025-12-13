@@ -18,6 +18,7 @@ import 'package:mobile/features/services/screens/services_list_screen.dart';
 import 'package:mobile/features/shops/screens/shop_detail_screen.dart';
 import 'package:mobile/features/shops/screens/shops_list_screen.dart';
 import 'package:mobile/features/shops/screens/workers_list_screen.dart';
+import 'package:mobile/features/ai/screens/ai_screen.dart';
 import 'package:mobile/features/notifications/screens/notifications_screen.dart';
 import 'package:mobile/features/stats/screens/stats_screen.dart';
 import 'package:mobile/features/walkin/screens/walkin_list_screen.dart';
@@ -150,6 +151,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(path: '/stats', builder: (context, state) => const StatsScreen()),
+      GoRoute(
+        path: '/ai',
+        builder: (context, state) => const AIScreen(),
+      ),
       GoRoute(
         path: '/profile',
         builder: (context, state) => const ProfileScreen(),

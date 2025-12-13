@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/common/providers/providers.dart';
+import 'package:mobile/common/widgets/bottom_nav_bar.dart';
 import 'package:mobile/features/chats/models/chat.dart';
 import 'package:intl/intl.dart';
 
@@ -81,6 +82,7 @@ class ChatListScreen extends ConsumerWidget {
           );
         },
       ),
+      bottomNavigationBar: const BottomNavBar(currentIndex: 2),
     );
   }
 }

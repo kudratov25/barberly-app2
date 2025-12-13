@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/common/providers/providers.dart';
 import 'package:mobile/features/barbers/models/barber.dart';
+import 'package:mobile/features/orders/models/order.dart';
 import 'package:mobile/features/services/models/service.dart' as svc;
 import 'package:mobile/features/shops/services/shop_service.dart';
 import 'package:intl/intl.dart';
@@ -33,6 +34,8 @@ class _BarberBookingScreenState extends ConsumerState<BarberBookingScreen> {
   List<BarberSchedule> _schedules = [];
   List<String> _timeSlots = [];
   Future<PaginatedResponse<svc.Service>>? _servicesFuture;
+  List<Order> _existingOrders = [];
+  bool _isLoadingOrders = false;
 
   DateTime? _initialDateFromSchedules() {
     if (_schedules.isEmpty) return null;
@@ -44,6 +47,71 @@ class _BarberBookingScreenState extends ConsumerState<BarberBookingScreen> {
       if (has) return d;
     }
     return null;
+  }
+
+  /// Fetch existing orders for this barber to filter out booked slots
+  Future<void> _fetchExistingOrders() async {
+    if (_isLoadingOrders) return;
+    setState(() => _isLoadingOrders = true);
+
+    try {
+      final ordersResponse = await ref
+          .read(orderServiceProvider)
+          .listOrders(role: 'client', perPage: 100);
+
+      // Filter orders for this barber with pending/in_progress status
+      final now = DateTime.now();
+      _existingOrders = ordersResponse.data.where((order) {
+        // Only consider orders for this barber
+        if (order.barberId != widget.barberId) return false;
+
+        // Only consider pending or in_progress orders
+        final status = order.status.toLowerCase();
+        if (status != 'pending' && status != 'in_progress') return false;
+
+        // Only consider future orders
+        try {
+          final startTime = DateTime.parse(order.startTime);
+          return startTime.isAfter(now);
+        } catch (_) {
+          return false;
+        }
+      }).toList();
+
+      // Regenerate time slots with updated orders
+      if (_selectedDate != null) {
+        _generateTimeSlotsForDate(_selectedDate!);
+      }
+    } catch (_) {
+      // Ignore errors, continue with available slots
+    } finally {
+      if (mounted) {
+        setState(() => _isLoadingOrders = false);
+      }
+    }
+  }
+
+  /// Check if a time slot is already booked
+  bool _isSlotBooked(DateTime slotDateTime) {
+    for (final order in _existingOrders) {
+      try {
+        final orderStartTime = DateTime.parse(order.startTime);
+        // Check if the slot overlaps with an existing order
+        // Orders are typically 30 minutes, so we check exact match or overlap
+        final slotEnd = slotDateTime.add(const Duration(minutes: 30));
+        final orderEnd = order.endTime != null
+            ? DateTime.parse(order.endTime!)
+            : orderStartTime.add(const Duration(minutes: 30));
+
+        // Check if slots overlap
+        if (slotDateTime.isBefore(orderEnd) && slotEnd.isAfter(orderStartTime)) {
+          return true;
+        }
+      } catch (_) {
+        // Skip invalid dates
+      }
+    }
+    return false;
   }
 
   void _generateTimeSlotsForDate(DateTime date) {
@@ -105,6 +173,12 @@ class _BarberBookingScreenState extends ConsumerState<BarberBookingScreen> {
           continue;
         }
 
+        // Skip if this slot is already booked
+        if (_isSlotBooked(slot)) {
+          slot = slot.add(const Duration(minutes: 30));
+          continue;
+        }
+
         _timeSlots.add(DateFormat('HH:mm').format(slot));
         slot = slot.add(const Duration(minutes: 30));
       }
@@ -127,6 +201,9 @@ class _BarberBookingScreenState extends ConsumerState<BarberBookingScreen> {
           shopId: _barber?.shopId,
           perPage: 200,
         );
+
+    // Fetch existing orders to filter out booked slots
+    _fetchExistingOrders();
 
     // Show time slots even before user picks a date:
     // preselect the nearest working date (usually today).
@@ -200,6 +277,9 @@ class _BarberBookingScreenState extends ConsumerState<BarberBookingScreen> {
             serviceIds: serviceIds,
             startTime: startTime,
           );
+
+      // Refresh orders list to update available slots
+      await _fetchExistingOrders();
 
       // Create or get chat with this barber and send booking info message
       try {
@@ -390,8 +470,10 @@ class _BarberBookingScreenState extends ConsumerState<BarberBookingScreen> {
                             if (date != null) {
                               setState(() {
                                 _selectedDate = date;
-                                _generateTimeSlotsForDate(date);
                               });
+                              // Refresh orders and regenerate time slots
+                              await _fetchExistingOrders();
+                              _generateTimeSlotsForDate(date);
                             }
                           },
                           borderRadius: BorderRadius.circular(12),

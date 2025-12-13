@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/common/providers/providers.dart';
+import 'package:mobile/common/widgets/bottom_nav_bar.dart';
 import 'package:mobile/features/orders/models/order.dart';
 import 'package:mobile/features/shops/services/shop_service.dart';
 import 'package:intl/intl.dart';
@@ -126,15 +127,52 @@ class OrdersListScreen extends ConsumerWidget {
           }
 
           final orders = snapshot.data!.data;
+          
+          // Sort orders: newest first (by created_at, fallback to start_time)
+          final sortedOrders = List<Order>.from(orders);
+          sortedOrders.sort((a, b) {
+            DateTime? aTime;
+            DateTime? bTime;
+            
+            // Prefer created_at, fallback to start_time
+            try {
+              aTime = a.createdAt != null && a.createdAt!.isNotEmpty
+                  ? DateTime.parse(a.createdAt!)
+                  : DateTime.parse(a.startTime);
+            } catch (_) {
+              try {
+                aTime = DateTime.parse(a.startTime);
+              } catch (_) {}
+            }
+            
+            try {
+              bTime = b.createdAt != null && b.createdAt!.isNotEmpty
+                  ? DateTime.parse(b.createdAt!)
+                  : DateTime.parse(b.startTime);
+            } catch (_) {
+              try {
+                bTime = DateTime.parse(b.startTime);
+              } catch (_) {}
+            }
+            
+            if (aTime != null && bTime != null) {
+              // Descending order (newest first)
+              return bTime.compareTo(aTime);
+            }
+            if (aTime != null) return -1;
+            if (bTime != null) return 1;
+            return 0;
+          });
+          
           return RefreshIndicator(
             onRefresh: () async {
               // Trigger rebuild
             },
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
-              itemCount: orders.length,
+              itemCount: sortedOrders.length,
               itemBuilder: (context, index) {
-                final order = orders[index];
+                final order = sortedOrders[index];
                 return _OrderCard(
                   order: order,
                   statusColor: _getStatusColor(order.status),
@@ -150,6 +188,7 @@ class OrdersListScreen extends ConsumerWidget {
         label: const Text('New Booking'),
         backgroundColor: const Color(0xFF2196F3),
       ),
+      bottomNavigationBar: const BottomNavBar(currentIndex: 3),
     );
   }
 }

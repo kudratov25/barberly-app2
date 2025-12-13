@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/common/providers/providers.dart';
+import 'package:mobile/common/widgets/bottom_nav_bar.dart';
 import 'package:mobile/features/shops/models/shop.dart';
-import 'package:mobile/features/shops/services/shop_service.dart';
 
 /// Nearby Shops Page with search functionality
 class ShopsListScreen extends ConsumerStatefulWidget {
@@ -141,6 +141,7 @@ class _ShopsListScreenState extends ConsumerState<ShopsListScreen> {
           ),
         ],
       ),
+      bottomNavigationBar: const BottomNavBar(currentIndex: 1),
     );
   }
 

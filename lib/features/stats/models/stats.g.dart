@@ -8,7 +8,10 @@ part of 'stats.dart';
 
 _$DailyStatsImpl _$$DailyStatsImplFromJson(Map<String, dynamic> json) =>
     _$DailyStatsImpl(
-      month: json['month'] as String,
+      period: json['period'] as String?,
+      from: json['from'] as String?,
+      to: json['to'] as String?,
+      currency: json['currency'] as String?,
       points: (json['points'] as List<dynamic>)
           .map((e) => DailyPoint.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -17,7 +20,10 @@ _$DailyStatsImpl _$$DailyStatsImplFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$$DailyStatsImplToJson(_$DailyStatsImpl instance) =>
     <String, dynamic>{
-      'month': instance.month,
+      'period': instance.period,
+      'from': instance.from,
+      'to': instance.to,
+      'currency': instance.currency,
       'points': instance.points,
       'totals': instance.totals,
     };
@@ -25,25 +31,30 @@ Map<String, dynamic> _$$DailyStatsImplToJson(_$DailyStatsImpl instance) =>
 _$DailyPointImpl _$$DailyPointImplFromJson(Map<String, dynamic> json) =>
     _$DailyPointImpl(
       date: json['date'] as String,
-      orders: (json['orders'] as num).toInt(),
+      ordersCount: (json['orders_count'] as num).toInt(),
       revenue: (json['revenue'] as num).toInt(),
+      avgTicket: (json['avg_ticket'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$$DailyPointImplToJson(_$DailyPointImpl instance) =>
     <String, dynamic>{
       'date': instance.date,
-      'orders': instance.orders,
+      'orders_count': instance.ordersCount,
       'revenue': instance.revenue,
+      'avg_ticket': instance.avgTicket,
     };
 
 _$DailyTotalsImpl _$$DailyTotalsImplFromJson(Map<String, dynamic> json) =>
     _$DailyTotalsImpl(
-      orders: (json['orders'] as num).toInt(),
+      ordersCount: (json['orders_count'] as num).toInt(),
       revenue: (json['revenue'] as num).toInt(),
     );
 
 Map<String, dynamic> _$$DailyTotalsImplToJson(_$DailyTotalsImpl instance) =>
-    <String, dynamic>{'orders': instance.orders, 'revenue': instance.revenue};
+    <String, dynamic>{
+      'orders_count': instance.ordersCount,
+      'revenue': instance.revenue,
+    };
 
 _$MonthlyStatsImpl _$$MonthlyStatsImplFromJson(
   Map<String, dynamic> json,
@@ -75,7 +86,7 @@ Map<String, dynamic> _$$MonthlyStatsImplToJson(_$MonthlyStatsImpl instance) =>
 _$MonthlyPointImpl _$$MonthlyPointImplFromJson(Map<String, dynamic> json) =>
     _$MonthlyPointImpl(
       month: json['month'] as String,
-      orders: (json['orders'] as num).toInt(),
+      ordersCount: (json['orders_count'] as num).toInt(),
       revenue: (json['revenue'] as num).toInt(),
       shops: (json['shops'] as num?)?.toInt(),
     );
@@ -83,21 +94,21 @@ _$MonthlyPointImpl _$$MonthlyPointImplFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$$MonthlyPointImplToJson(_$MonthlyPointImpl instance) =>
     <String, dynamic>{
       'month': instance.month,
-      'orders': instance.orders,
+      'orders_count': instance.ordersCount,
       'revenue': instance.revenue,
       'shops': instance.shops,
     };
 
 _$MonthlyTotalsImpl _$$MonthlyTotalsImplFromJson(Map<String, dynamic> json) =>
     _$MonthlyTotalsImpl(
-      orders: (json['orders'] as num).toInt(),
+      ordersCount: (json['orders_count'] as num).toInt(),
       revenue: (json['revenue'] as num).toInt(),
       shops: (json['shops'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$$MonthlyTotalsImplToJson(_$MonthlyTotalsImpl instance) =>
     <String, dynamic>{
-      'orders': instance.orders,
+      'orders_count': instance.ordersCount,
       'revenue': instance.revenue,
       'shops': instance.shops,
     };
@@ -107,7 +118,7 @@ _$MonthlyComparisonImpl _$$MonthlyComparisonImplFromJson(
 ) => _$MonthlyComparisonImpl(
   previousYear: (json['previous_year'] as num).toInt(),
   previousRevenue: (json['previous_revenue'] as num).toInt(),
-  changePercent: (json['change_percent'] as num).toDouble(),
+  changePercent: (json['change_percent'] as num?)?.toDouble(),
 );
 
 Map<String, dynamic> _$$MonthlyComparisonImplToJson(

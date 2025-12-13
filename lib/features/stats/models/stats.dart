@@ -6,7 +6,10 @@ part 'stats.g.dart';
 @freezed
 class DailyStats with _$DailyStats {
   const factory DailyStats({
-    required String month,
+    String? period,
+    String? from,
+    String? to,
+    String? currency,
     required List<DailyPoint> points,
     required DailyTotals totals,
   }) = _DailyStats;
@@ -19,8 +22,9 @@ class DailyStats with _$DailyStats {
 class DailyPoint with _$DailyPoint {
   const factory DailyPoint({
     required String date,
-    required int orders,
+    @JsonKey(name: 'orders_count') required int ordersCount,
     required int revenue,
+    @JsonKey(name: 'avg_ticket') int? avgTicket,
   }) = _DailyPoint;
 
   factory DailyPoint.fromJson(Map<String, dynamic> json) =>
@@ -30,7 +34,7 @@ class DailyPoint with _$DailyPoint {
 @freezed
 class DailyTotals with _$DailyTotals {
   const factory DailyTotals({
-    required int orders,
+    @JsonKey(name: 'orders_count') required int ordersCount,
     required int revenue,
   }) = _DailyTotals;
 
@@ -57,7 +61,7 @@ class MonthlyStats with _$MonthlyStats {
 class MonthlyPoint with _$MonthlyPoint {
   const factory MonthlyPoint({
     required String month,
-    required int orders,
+    @JsonKey(name: 'orders_count') required int ordersCount,
     required int revenue,
     int? shops,
   }) = _MonthlyPoint;
@@ -69,7 +73,7 @@ class MonthlyPoint with _$MonthlyPoint {
 @freezed
 class MonthlyTotals with _$MonthlyTotals {
   const factory MonthlyTotals({
-    required int orders,
+    @JsonKey(name: 'orders_count') required int ordersCount,
     required int revenue,
     int? shops,
   }) = _MonthlyTotals;
@@ -83,7 +87,7 @@ class MonthlyComparison with _$MonthlyComparison {
   const factory MonthlyComparison({
     @JsonKey(name: 'previous_year') required int previousYear,
     @JsonKey(name: 'previous_revenue') required int previousRevenue,
-    @JsonKey(name: 'change_percent') required double changePercent,
+    @JsonKey(name: 'change_percent') double? changePercent,
   }) = _MonthlyComparison;
 
   factory MonthlyComparison.fromJson(Map<String, dynamic> json) =>

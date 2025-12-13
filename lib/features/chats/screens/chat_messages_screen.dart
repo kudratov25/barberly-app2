@@ -173,11 +173,11 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
         });
       } else {
         // Send new message or reply
-        await ref.read(chatServiceProvider).sendMessage(
-              chatId: widget.chatId,
-              message: message,
+      await ref.read(chatServiceProvider).sendMessage(
+            chatId: widget.chatId,
+            message: message,
               replyToId: replyToId,
-            );
+          );
         setState(() {
           _replyingToMessage = null;
           _messageController.clear();
@@ -423,9 +423,9 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
                     final bubble = Flexible(
                       child: _MessageBubble(
                         key: _messageKeys[message.id],
-                        message: message,
+                      message: message,
                         replyToMessage: replyToMessage,
-                        isSent: isSent,
+                      isSent: isSent,
                         onReplyTap: message.replyToId != null
                             ? () => _scrollToMessage(message.replyToId!)
                             : null,
@@ -522,8 +522,8 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
                     constraints: const BoxConstraints(),
                   ),
                 ],
-              ),
             ),
+          ),
           // Message input
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
@@ -692,18 +692,18 @@ class _MessageBubble extends StatelessWidget {
                       ),
                     ),
                   ),
-                Text(
-                  message.message,
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: isSent ? Colors.white : const Color(0xFF212121),
-                  ),
-                ),
-                const SizedBox(height: 4),
+            Text(
+              message.message,
+              style: TextStyle(
+                fontSize: 15,
+                color: isSent ? Colors.white : const Color(0xFF212121),
+              ),
+            ),
+            const SizedBox(height: 4),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
+            Text(
                       () {
                         try {
                           final dt = DateTime.parse(message.createdAt);
@@ -712,10 +712,10 @@ class _MessageBubble extends StatelessWidget {
                           return '';
                         }
                       }(),
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: isSent ? Colors.white70 : const Color(0xFF757575),
-                      ),
+              style: TextStyle(
+                fontSize: 11,
+                color: isSent ? Colors.white70 : const Color(0xFF757575),
+              ),
                     ),
                     if (isSent) ...[
                       const SizedBox(width: 4),
@@ -734,7 +734,7 @@ class _MessageBubble extends StatelessWidget {
                         ),
                     ],
                   ],
-                ),
+            ),
           ],
         ),
       ),

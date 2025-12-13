@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/common/providers/providers.dart';
+import 'package:mobile/common/widgets/bottom_nav_bar.dart';
 import 'package:mobile/features/barbers/models/barber.dart';
 import 'package:mobile/features/orders/models/order.dart';
 import 'package:mobile/features/shops/services/shop_service.dart';
@@ -154,7 +155,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: const _BottomNavBar(currentIndex: 0),
+      bottomNavigationBar: const BottomNavBar(currentIndex: 0),
     );
   }
 
@@ -299,104 +300,253 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Column(
       children: [
-        Container(
-          width: 52,
-          height: 52,
-          decoration: const BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: LinearGradient(
-              colors: [Color(0xFF0A84FF), Color(0xFF4DA8FF)],
-            ),
-          ),
-          child: userAsync.when(
-            data: (user) => Center(
-              child: Text(
-                user.name.isNotEmpty ? user.name[0].toUpperCase() : 'C',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
+        Row(
+          children: [
+            Container(
+              width: 52,
+              height: 52,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [Color(0xFF0A84FF), Color(0xFF4DA8FF)],
                 ),
+              ),
+              child: userAsync.when(
+                data: (user) => Center(
+                  child: Text(
+                    user.name.isNotEmpty ? user.name[0].toUpperCase() : 'C',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                loading: () => const SizedBox(),
+                error: (_, __) => const Icon(Icons.person,
+                    color: Colors.white, size: 26),
               ),
             ),
-            loading: () => const SizedBox(),
-            error: (_, __) => const Icon(Icons.person,
-                color: Colors.white, size: 26),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              userAsync.when(
-                data: (user) => Text(
-                  user.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF111827),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  userAsync.when(
+                    data: (user) => Text(
+                      user.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF111827),
+                      ),
+                    ),
+                    loading: () => const Text(
+                      'Loading...',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF111827),
+                      ),
+                    ),
+                    error: (_, __) => const Text(
+                      'Client',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF111827),
+                      ),
+                    ),
                   ),
-                ),
-                loading: () => const Text(
-                  'Loading...',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF111827),
+                  const SizedBox(height: 2),
+                  const Text(
+                    'Client',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF6B7280),
+                    ),
                   ),
-                ),
-                error: (_, __) => const Text(
-                  'Client',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF111827),
-                  ),
-                ),
+                ],
               ),
-              const SizedBox(height: 2),
-              const Text(
-                'Client',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Color(0xFF6B7280),
-                ),
-              ),
-            ],
-          ),
+            ),
+            FutureBuilder<PaginatedResponse<Order>>(
+              future: ref
+                  .read(orderServiceProvider)
+                  .listOrders(role: 'client'),
+              builder: (context, snapshot) {
+                int newCount = 0;
+                if (snapshot.hasData) {
+                  newCount = snapshot.data!.data
+                      .where((order) =>
+                          order.status.toLowerCase() == 'pending' ||
+                          order.status.toLowerCase() == 'in_progress')
+                      .length;
+                }
+                return IconButton(
+                  onPressed: () => context.push('/notifications'),
+                  icon: Badge(
+                    backgroundColor: Colors.red,
+                    label: Text(
+                      '$newCount',
+                      style: const TextStyle(fontSize: 10),
+                    ),
+                    isLabelVisible: newCount > 0,
+                    child: const Icon(
+                      Icons.notifications_none_rounded,
+                      size: 26,
+                      color: Color(0xFF111827),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
         ),
+        // Nearest upcoming booking in header
         FutureBuilder<PaginatedResponse<Order>>(
-          future: ref
-              .read(orderServiceProvider)
-              .listOrders(role: 'client'),
+          future: ref.read(orderServiceProvider).listOrders(role: 'client'),
           builder: (context, snapshot) {
-            int newCount = 0;
-            if (snapshot.hasData) {
-              newCount = snapshot.data!.data
-                  .where((order) =>
-                      order.status.toLowerCase() == 'pending' ||
-                      order.status.toLowerCase() == 'in_progress')
-                  .length;
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const SizedBox.shrink();
             }
-            return IconButton(
-              onPressed: () => context.push('/notifications'),
-              icon: Badge(
-                backgroundColor: Colors.red,
-                label: Text(
-                  '$newCount',
-                  style: const TextStyle(fontSize: 10),
+
+            if (!snapshot.hasData || snapshot.data!.data.isEmpty) {
+              return const SizedBox.shrink();
+            }
+
+            final now = DateTime.now();
+            final upcomingOrders = snapshot.data!.data
+                .where((order) {
+                  // Only show pending or in_progress orders
+                  final status = order.status.toLowerCase();
+                  if (status != 'pending' && status != 'in_progress') {
+                    return false;
+                  }
+
+                  // Check if start time is in the future
+                  try {
+                    final startTime = DateTime.parse(order.startTime);
+                    return startTime.isAfter(now);
+                  } catch (_) {
+                    return false;
+                  }
+                })
+                .toList();
+
+            if (upcomingOrders.isEmpty) {
+              return const SizedBox.shrink();
+            }
+
+            // Sort by start time ascending (nearest first)
+            upcomingOrders.sort((a, b) {
+              try {
+                final aTime = DateTime.parse(a.startTime);
+                final bTime = DateTime.parse(b.startTime);
+                return aTime.compareTo(bTime);
+              } catch (_) {
+                return 0;
+              }
+            });
+
+            final nearestOrder = upcomingOrders.first;
+            DateTime? startDateTime;
+            try {
+              startDateTime = DateTime.parse(nearestOrder.startTime);
+            } catch (_) {}
+
+            return Container(
+              margin: const EdgeInsets.only(top: 12),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0A84FF).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: const Color(0xFF0A84FF).withOpacity(0.2),
+                  width: 1,
                 ),
-                isLabelVisible: newCount > 0,
-                child: const Icon(
-                  Icons.notifications_none_rounded,
-                  size: 26,
-                  color: Color(0xFF111827),
-                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.calendar_today,
+                    size: 18,
+                    color: Color(0xFF0A84FF),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Yaqin booking',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF6B7280),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            if (startDateTime != null) ...[
+                              Text(
+                                '${startDateTime.day.toString().padLeft(2, '0')}.${startDateTime.month.toString().padLeft(2, '0')}.${startDateTime.year}',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF111827),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '${startDateTime.hour.toString().padLeft(2, '0')}:${startDateTime.minute.toString().padLeft(2, '0')}',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF111827),
+                                ),
+                              ),
+                            ] else
+                              Text(
+                                nearestOrder.startTime,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF111827),
+                                ),
+                              ),
+                            if (nearestOrder.barber?.name != null) ...[
+                              const SizedBox(width: 8),
+                              Text(
+                                '• ${nearestOrder.barber!.name}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF6B7280),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => context.push('/orders/${nearestOrder.id}'),
+                    icon: const Icon(
+                      Icons.arrow_forward_ios,
+                      size: 16,
+                      color: Color(0xFF0A84FF),
+                    ),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
               ),
             );
           },
@@ -427,9 +577,40 @@ class _NextAppointmentSection extends StatelessWidget {
           return _EmptyNextAppointmentCard();
         }
 
-        // For simplicity, take the first order as "next"
-        final order = snapshot.data!.data.first;
-        return _NextAppointmentCard(order: order);
+        // Find nearest upcoming booking (sorted by date and time)
+        final now = DateTime.now();
+        final upcomingOrders = snapshot.data!.data
+            .where((order) {
+              final status = order.status.toLowerCase();
+              if (status != 'pending' && status != 'in_progress') {
+                return false;
+              }
+              try {
+                final startTime = DateTime.parse(order.startTime);
+                return startTime.isAfter(now);
+              } catch (_) {
+                return false;
+              }
+            })
+            .toList();
+
+        if (upcomingOrders.isEmpty) {
+          return _EmptyNextAppointmentCard();
+        }
+
+        // Sort by start time ascending (nearest first)
+        upcomingOrders.sort((a, b) {
+          try {
+            final aTime = DateTime.parse(a.startTime);
+            final bTime = DateTime.parse(b.startTime);
+            return aTime.compareTo(bTime);
+          } catch (_) {
+            return 0;
+          }
+        });
+
+        final nearestOrder = upcomingOrders.first;
+        return _NextAppointmentCard(order: nearestOrder);
       },
     );
   }
@@ -971,64 +1152,6 @@ class _StatsRowLabelValue extends StatelessWidget {
   }
 }
 
-class _BottomNavBar extends StatelessWidget {
-  final int currentIndex;
-
-  const _BottomNavBar({required this.currentIndex});
-
-  @override
-  Widget build(BuildContext context) {
-    return NavigationBar(
-      selectedIndex: currentIndex,
-      onDestinationSelected: (index) {
-        switch (index) {
-          case 0:
-            context.go('/home');
-            break;
-          case 1:
-            context.push('/shops');
-            break;
-          case 2:
-            context.push('/chats');
-            break;
-          case 3:
-            context.push('/orders');
-            break;
-          case 4:
-            context.push('/profile');
-            break;
-        }
-      },
-      destinations: const [
-        NavigationDestination(
-          icon: Icon(Icons.home_outlined),
-          selectedIcon: Icon(Icons.home),
-          label: 'Home',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.search_outlined),
-          selectedIcon: Icon(Icons.search),
-          label: 'Search',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.chat_bubble_outline),
-          selectedIcon: Icon(Icons.chat_bubble),
-          label: 'Chat',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.calendar_today_outlined),
-          selectedIcon: Icon(Icons.calendar_today),
-          label: 'Bookings',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.person_outline),
-          selectedIcon: Icon(Icons.person),
-          label: 'Profile',
-        ),
-      ],
-    );
-  }
-}
 
 // Provider for current user
 final currentUserProvider = FutureProvider((ref) async {
