@@ -2,9 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile/common/providers/providers.dart';
+import 'package:mobile/common/utils/storage.dart';
 import 'package:mobile/features/chats/models/chat.dart';
 import 'package:intl/intl.dart';
-import 'package:mobile/features/ratings/services/rating_service.dart';
 
 /// Telegram-like chat messages screen
 /// 
@@ -43,6 +43,9 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
   
   // Track which orders have been rated to avoid showing dialog multiple times
   final Set<int> _ratedOrders = {};
+  final Map<int, int> _orderRatings = {}; // orderId -> rating (1..5)
+  bool _ratedOrdersLoaded = false;
+  bool _isRatingDialogOpen = false;
 
   @override
   void initState() {
@@ -50,6 +53,7 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
     // Load current user after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadCurrentUser();
+      _loadRatedOrdersFromStorage();
       // Mark chat as read when opening
       _markChatAsRead();
     });
@@ -80,6 +84,77 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
       }
     } catch (e) {
       // Ignore error, will use null
+    }
+  }
+
+  Future<void> _loadRatedOrdersFromStorage() async {
+    try {
+      final rated = await Storage.getRatedOrders();
+      final ratings = await Storage.getOrderRatings();
+      if (!mounted) return;
+      setState(() {
+        _ratedOrders
+          ..clear()
+          ..addAll(rated);
+        _orderRatings
+          ..clear()
+          ..addAll(ratings);
+        _ratedOrdersLoaded = true;
+      });
+
+      // If messages already loaded, re-check whether we need to prompt for rating.
+      _checkForRatingRequests(_messages);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _ratedOrdersLoaded = true; // avoid blocking prompts forever
+      });
+    }
+  }
+
+  Widget _buildRatedInChatMessage({required int orderId}) {
+    final rating = _orderRatings[orderId];
+    final stars = rating == null ? '' : ' ${'⭐' * rating}';
+    final text = rating == null
+        ? 'Siz bu xizmatga baho berdingiz.'
+        : 'Siz $rating⭐ baho berdingiz.$stars';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.06),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.grey.shade800,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _checkForRatingRequests(List<ChatMessage> messages) {
+    if (!_ratedOrdersLoaded) return;
+    if (_isRatingDialogOpen) return;
+    for (final msg in messages) {
+      final text = msg.message.toLowerCase();
+      if (msg.messageType == 'system' &&
+          msg.orderId != null &&
+          text.contains('baho') &&
+          !_ratedOrders.contains(msg.orderId)) {
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (mounted) _showRatingDialog(msg.orderId!);
+        });
+        break; // only show one dialog at a time
+      }
     }
   }
 
@@ -153,19 +228,7 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
           });
           
           // Check for rating request messages on first load
-          for (final msg in newMessages) {
-            if (msg.messageType == 'system' && 
-                msg.orderId != null &&
-                msg.message.contains('baho') &&
-                !_ratedOrders.contains(msg.orderId)) {
-              // Show rating dialog after a short delay
-              Future.delayed(const Duration(milliseconds: 1000), () {
-                if (mounted) {
-                  _showRatingDialog(msg.orderId!);
-                }
-              });
-            }
-          }
+          _checkForRatingRequests(newMessages);
           
           // Auto-scroll to bottom on first load
           _scrollToBottom(smooth: false);
@@ -225,19 +288,7 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
         });
 
         // Check for rating request messages
-        for (final msg in newMessagesToAdd) {
-          if (msg.messageType == 'system' && 
-              msg.orderId != null &&
-              msg.message.contains('baho') &&
-              !_ratedOrders.contains(msg.orderId)) {
-            // Show rating dialog after a short delay
-            Future.delayed(const Duration(milliseconds: 500), () {
-              if (mounted) {
-                _showRatingDialog(msg.orderId!);
-              }
-            });
-          }
-        }
+        _checkForRatingRequests(newMessagesToAdd);
 
         // Auto-scroll to bottom if user was at bottom or on first load
         if (wasAtBottom || !_hasScrolledToBottom) {
@@ -317,6 +368,8 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
   Future<void> _showRatingDialog(int orderId) async {
     // Don't show if already rated
     if (_ratedOrders.contains(orderId)) return;
+    if (_isRatingDialogOpen) return;
+    _isRatingDialogOpen = true;
     
     int? selectedRating;
     bool isLoading = false;
@@ -436,7 +489,13 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
                   if (mounted) {
                     setState(() {
                       _ratedOrders.add(orderId);
+                      _orderRatings[orderId] = selectedRating!;
                     });
+                    await Storage.addRatedOrder(orderId);
+                    await Storage.saveOrderRating(
+                      orderId: orderId,
+                      rating: selectedRating!,
+                    );
                     
                     Navigator.pop(dialogContext, {
                       'success': true,
@@ -458,6 +517,29 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
                     );
                   }
                 } catch (e) {
+                  final msg = e.toString().toLowerCase();
+                  final alreadyRated = msg.contains('already been rated') ||
+                      msg.contains('already rated') ||
+                      msg.contains('allaqachon baholangan') ||
+                      msg.contains('allaqachon baholangan');
+
+                  if (alreadyRated) {
+                    if (mounted) {
+                      setState(() {
+                        _ratedOrders.add(orderId);
+                      });
+                      await Storage.addRatedOrder(orderId);
+                      Navigator.pop(dialogContext, {'success': false});
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Bu buyurtma allaqachon baholangan.'),
+                          backgroundColor: Colors.blueGrey,
+                        ),
+                      );
+                    }
+                    return;
+                  }
+
                   setDialogState(() {
                     isLoading = false;
                   });
@@ -505,6 +587,7 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
     );
 
     // Dialog yopilganda hech narsa qilmaymiz, chunki rating allaqachon yuborilgan
+    _isRatingDialogOpen = false;
   }
 
   Future<void> _deleteMessage(ChatMessage message) async {
@@ -649,6 +732,17 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
                   itemCount: _messages.length,
                   itemBuilder: (context, index) {
                     final message = _messages[index];
+
+                    // If this is the rating-request system message and rating already given,
+                    // show "you rated X⭐" instead of asking again.
+                    final msgLower = message.message.toLowerCase();
+                    if (message.messageType == 'system' &&
+                        message.orderId != null &&
+                        msgLower.contains('baho') &&
+                        _ratedOrders.contains(message.orderId)) {
+                      return _buildRatedInChatMessage(orderId: message.orderId!);
+                    }
+
                     // Create key for this message if it doesn't exist
                     _messageKeys.putIfAbsent(message.id, () => GlobalKey());
 

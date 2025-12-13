@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/common/providers/providers.dart';
+import 'package:mobile/common/utils/storage.dart';
 
 /// Create rating screen
 class CreateRatingScreen extends ConsumerStatefulWidget {
@@ -42,6 +43,8 @@ class _CreateRatingScreenState extends ConsumerState<CreateRatingScreen> {
           );
 
       if (mounted) {
+        await Storage.addRatedOrder(widget.orderId!);
+        await Storage.saveOrderRating(orderId: widget.orderId!, rating: _rating);
         context.pop();
       }
     } catch (e) {
