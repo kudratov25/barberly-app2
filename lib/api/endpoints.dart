@@ -23,6 +23,7 @@ class ApiEndpoints {
   static const String shops = '$apiPrefix/shops';
   static String shop(int id) => '$shops/$id';
   static String shopWorkers(int id) => '$shops/$id/workers';
+  static String shopBarbers(int id) => '$shops/$id/barbers';
   static String shopSubscription(int id) => '$shops/$id/subscription';
 
   // Services endpoints

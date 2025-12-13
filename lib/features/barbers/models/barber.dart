@@ -1,3 +1,4 @@
+// ignore_for_file: invalid_annotation_target
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'barber.freezed.dart';
@@ -8,6 +9,7 @@ class Barber with _$Barber {
   const factory Barber({
     required int id,
     required String name,
+    @JsonKey(name: 'shop_id') int? shopId,
     String? phone,
     @JsonKey(name: 'location_lat') double? locationLat,
     @JsonKey(name: 'location_lng') double? locationLng,

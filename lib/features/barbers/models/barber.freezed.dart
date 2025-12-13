@@ -23,6 +23,8 @@ Barber _$BarberFromJson(Map<String, dynamic> json) {
 mixin _$Barber {
   int get id => throw _privateConstructorUsedError;
   String get name => throw _privateConstructorUsedError;
+  @JsonKey(name: 'shop_id')
+  int? get shopId => throw _privateConstructorUsedError;
   String? get phone => throw _privateConstructorUsedError;
   @JsonKey(name: 'location_lat')
   double? get locationLat => throw _privateConstructorUsedError;
@@ -55,6 +57,7 @@ abstract class $BarberCopyWith<$Res> {
   $Res call({
     int id,
     String name,
+    @JsonKey(name: 'shop_id') int? shopId,
     String? phone,
     @JsonKey(name: 'location_lat') double? locationLat,
     @JsonKey(name: 'location_lng') double? locationLng,
@@ -84,6 +87,7 @@ class _$BarberCopyWithImpl<$Res, $Val extends Barber>
   $Res call({
     Object? id = null,
     Object? name = null,
+    Object? shopId = freezed,
     Object? phone = freezed,
     Object? locationLat = freezed,
     Object? locationLng = freezed,
@@ -104,6 +108,10 @@ class _$BarberCopyWithImpl<$Res, $Val extends Barber>
                 ? _value.name
                 : name // ignore: cast_nullable_to_non_nullable
                       as String,
+            shopId: freezed == shopId
+                ? _value.shopId
+                : shopId // ignore: cast_nullable_to_non_nullable
+                      as int?,
             phone: freezed == phone
                 ? _value.phone
                 : phone // ignore: cast_nullable_to_non_nullable
@@ -157,6 +165,7 @@ abstract class _$$BarberImplCopyWith<$Res> implements $BarberCopyWith<$Res> {
   $Res call({
     int id,
     String name,
+    @JsonKey(name: 'shop_id') int? shopId,
     String? phone,
     @JsonKey(name: 'location_lat') double? locationLat,
     @JsonKey(name: 'location_lng') double? locationLng,
@@ -185,6 +194,7 @@ class __$$BarberImplCopyWithImpl<$Res>
   $Res call({
     Object? id = null,
     Object? name = null,
+    Object? shopId = freezed,
     Object? phone = freezed,
     Object? locationLat = freezed,
     Object? locationLng = freezed,
@@ -205,6 +215,10 @@ class __$$BarberImplCopyWithImpl<$Res>
             ? _value.name
             : name // ignore: cast_nullable_to_non_nullable
                   as String,
+        shopId: freezed == shopId
+            ? _value.shopId
+            : shopId // ignore: cast_nullable_to_non_nullable
+                  as int?,
         phone: freezed == phone
             ? _value.phone
             : phone // ignore: cast_nullable_to_non_nullable
@@ -252,6 +266,7 @@ class _$BarberImpl implements _Barber {
   const _$BarberImpl({
     required this.id,
     required this.name,
+    @JsonKey(name: 'shop_id') this.shopId,
     this.phone,
     @JsonKey(name: 'location_lat') this.locationLat,
     @JsonKey(name: 'location_lng') this.locationLng,
@@ -271,6 +286,9 @@ class _$BarberImpl implements _Barber {
   final int id;
   @override
   final String name;
+  @override
+  @JsonKey(name: 'shop_id')
+  final int? shopId;
   @override
   final String? phone;
   @override
@@ -313,7 +331,7 @@ class _$BarberImpl implements _Barber {
 
   @override
   String toString() {
-    return 'Barber(id: $id, name: $name, phone: $phone, locationLat: $locationLat, locationLng: $locationLng, scheduleStatus: $scheduleStatus, ratingAvg: $ratingAvg, distance: $distance, services: $services, schedules: $schedules, lastActiveAt: $lastActiveAt)';
+    return 'Barber(id: $id, name: $name, shopId: $shopId, phone: $phone, locationLat: $locationLat, locationLng: $locationLng, scheduleStatus: $scheduleStatus, ratingAvg: $ratingAvg, distance: $distance, services: $services, schedules: $schedules, lastActiveAt: $lastActiveAt)';
   }
 
   @override
@@ -323,6 +341,7 @@ class _$BarberImpl implements _Barber {
             other is _$BarberImpl &&
             (identical(other.id, id) || other.id == id) &&
             (identical(other.name, name) || other.name == name) &&
+            (identical(other.shopId, shopId) || other.shopId == shopId) &&
             (identical(other.phone, phone) || other.phone == phone) &&
             (identical(other.locationLat, locationLat) ||
                 other.locationLat == locationLat) &&
@@ -349,6 +368,7 @@ class _$BarberImpl implements _Barber {
     runtimeType,
     id,
     name,
+    shopId,
     phone,
     locationLat,
     locationLng,
@@ -378,6 +398,7 @@ abstract class _Barber implements Barber {
   const factory _Barber({
     required final int id,
     required final String name,
+    @JsonKey(name: 'shop_id') final int? shopId,
     final String? phone,
     @JsonKey(name: 'location_lat') final double? locationLat,
     @JsonKey(name: 'location_lng') final double? locationLng,
@@ -395,6 +416,9 @@ abstract class _Barber implements Barber {
   int get id;
   @override
   String get name;
+  @override
+  @JsonKey(name: 'shop_id')
+  int? get shopId;
   @override
   String? get phone;
   @override

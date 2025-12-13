@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/common/providers/providers.dart';
 import 'package:mobile/features/barbers/models/barber.dart';
 import 'package:mobile/features/services/models/service.dart' as svc;
+import 'package:mobile/features/shops/services/shop_service.dart';
 import 'package:intl/intl.dart';
 
 /// Barber Profile/Booking Page with calendar, time slots, and services
@@ -23,6 +24,7 @@ class BarberBookingScreen extends ConsumerStatefulWidget {
 }
 
 class _BarberBookingScreenState extends ConsumerState<BarberBookingScreen> {
+  static final Set<int> _twoHourReminderScheduled = <int>{};
   DateTime? _selectedDate;
   String? _selectedTimeSlot;
   List<svc.Service> _selectedServices = [];
@@ -30,6 +32,19 @@ class _BarberBookingScreenState extends ConsumerState<BarberBookingScreen> {
   Barber? _barber;
   List<BarberSchedule> _schedules = [];
   List<String> _timeSlots = [];
+  Future<PaginatedResponse<svc.Service>>? _servicesFuture;
+
+  DateTime? _initialDateFromSchedules() {
+    if (_schedules.isEmpty) return null;
+    final now = DateTime.now();
+    for (int i = 0; i <= 30; i++) {
+      final d = DateTime(now.year, now.month, now.day).add(Duration(days: i));
+      final dayIndex = d.weekday % 7;
+      final has = _schedules.any((s) => s.isActive && s.dayOfWeek == dayIndex);
+      if (has) return d;
+    }
+    return null;
+  }
 
   void _generateTimeSlotsForDate(DateTime date) {
     _timeSlots = [];
@@ -94,6 +109,11 @@ class _BarberBookingScreenState extends ConsumerState<BarberBookingScreen> {
         slot = slot.add(const Duration(minutes: 30));
       }
     }
+
+    // If previously selected time is not available for this date, reset it.
+    if (_selectedTimeSlot != null && !_timeSlots.contains(_selectedTimeSlot)) {
+      _selectedTimeSlot = null;
+    }
   }
 
   @override
@@ -101,6 +121,19 @@ class _BarberBookingScreenState extends ConsumerState<BarberBookingScreen> {
     super.initState();
     _barber = widget.barber;
     _schedules = widget.barber?.schedules ?? [];
+
+    // Cache services future so selecting services doesn't refetch (no flicker).
+    _servicesFuture = ref.read(serviceServiceProvider).listServices(
+          shopId: _barber?.shopId,
+          perPage: 200,
+        );
+
+    // Show time slots even before user picks a date:
+    // preselect the nearest working date (usually today).
+    _selectedDate = _initialDateFromSchedules();
+    if (_selectedDate != null) {
+      _generateTimeSlotsForDate(_selectedDate!);
+    }
   }
 
   int get _totalPrice {
@@ -153,30 +186,71 @@ class _BarberBookingScreenState extends ConsumerState<BarberBookingScreen> {
     try {
       final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate!);
       final startTime = '$dateStr ${_selectedTimeSlot!}:00';
-      final primaryService = _selectedServices.first;
+      final serviceIds = _selectedServices.map((s) => s.id).toList();
+      final startDateTime = DateTime(
+        _selectedDate!.year,
+        _selectedDate!.month,
+        _selectedDate!.day,
+        int.parse(_selectedTimeSlot!.split(':')[0]),
+        int.parse(_selectedTimeSlot!.split(':')[1]),
+      );
 
       final order = await ref.read(orderServiceProvider).createOrder(
             barberId: widget.barberId,
-            serviceId: primaryService.id,
+            serviceIds: serviceIds,
             startTime: startTime,
           );
 
       // Create or get chat with this barber and send booking info message
       try {
-        final currentUser =
-            await ref.read(authServiceProvider).getCurrentUser();
         final chat = await ref
             .read(chatServiceProvider)
             .createOrGetChat(widget.barberId);
 
-        final message =
-            '${currentUser.name} booked services on $dateStr at ${_selectedTimeSlot!}';
+        final servicesText = _selectedServices.map((s) => s.name).join(', ');
+        final message = [
+          'New booking',
+          'Date: $dateStr',
+          'Time: ${_selectedTimeSlot!}',
+          'Services: $servicesText',
+          'Total: $_totalPrice UZS',
+        ].join('\n');
 
         await ref.read(chatServiceProvider).sendMessage(
               chatId: chat.id,
               message: message,
               orderId: order.id,
             );
+
+        // Schedule "2 hours left" reminder (in-app, when app is running)
+        if (!_twoHourReminderScheduled.contains(order.id)) {
+          final remindAt = startDateTime.subtract(const Duration(hours: 2));
+          final delay = remindAt.difference(DateTime.now());
+          if (delay.inMilliseconds > 0) {
+            _twoHourReminderScheduled.add(order.id);
+            Future.delayed(delay, () async {
+              try {
+                final reminderChat = await ref
+                    .read(chatServiceProvider)
+                    .createOrGetChat(widget.barberId);
+                final reminderMessage = [
+                  'Reminder',
+                  'Order #${order.id}',
+                  'Bookingga 2 soat qoldi',
+                  'Date: $dateStr',
+                  'Time: ${_selectedTimeSlot!}',
+                ].join('\n');
+                await ref.read(chatServiceProvider).sendMessage(
+                      chatId: reminderChat.id,
+                      message: reminderMessage,
+                      orderId: order.id,
+                    );
+              } catch (_) {
+                // ignore
+              }
+            });
+          }
+        }
       } catch (_) {
         // Ignore chat errors, booking is already successful
       }
@@ -372,6 +446,26 @@ class _BarberBookingScreenState extends ConsumerState<BarberBookingScreen> {
                           ),
                         ),
                         const SizedBox(height: 12),
+                        if (_selectedDate != null && _timeSlots.isEmpty)
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFF3E0),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.orange.withOpacity(0.35),
+                              ),
+                            ),
+                            child: const Text(
+                              'Bu kunga bo‘sh vaqt yo‘q',
+                              style: TextStyle(
+                                color: Color(0xFFB45309),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          )
+                        else
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
@@ -421,13 +515,21 @@ class _BarberBookingScreenState extends ConsumerState<BarberBookingScreen> {
                         ),
                         const SizedBox(height: 12),
                         FutureBuilder(
-                          future:
-                              ref.read(serviceServiceProvider).listServices(),
+                          future: _servicesFuture,
                           builder: (context, servicesSnapshot) {
+                            if (_servicesFuture == null) {
+                              return const Center(
+                                child: CircularProgressIndicator(),
+                              );
+                            }
                             if (servicesSnapshot.connectionState ==
                                 ConnectionState.waiting) {
                               return const Center(
                                   child: CircularProgressIndicator());
+                            }
+
+                            if (servicesSnapshot.hasError) {
+                              return Text('Error: ${servicesSnapshot.error}');
                             }
 
                             if (!servicesSnapshot.hasData ||
@@ -435,9 +537,18 @@ class _BarberBookingScreenState extends ConsumerState<BarberBookingScreen> {
                               return const Text('No services available');
                             }
 
-                            final services = servicesSnapshot.data!.data;
+                            final allServices = servicesSnapshot.data!.data
+                                .where((s) => s.isActive)
+                                .toList();
+
+                            // Shop-wide services (same for all barbers in this shop)
+                            allServices.sort((a, b) => a.name.compareTo(b.name));
+
+                            if (allServices.isEmpty) {
+                              return const Text('No services available');
+                            }
                             return Column(
-                              children: services.map((service) {
+                              children: allServices.map((service) {
                                 final isSelected =
                                     _selectedServices.contains(service);
                                 return CheckboxListTile(
@@ -510,7 +621,13 @@ class _BarberBookingScreenState extends ConsumerState<BarberBookingScreen> {
               const SizedBox(width: 16),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : _bookAppointment,
+                  onPressed: (_isLoading ||
+                          _selectedDate == null ||
+                          _timeSlots.isEmpty ||
+                          _selectedTimeSlot == null ||
+                          _selectedServices.isEmpty)
+                      ? null
+                      : _bookAppointment,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF2196F3),
                     foregroundColor: Colors.white,

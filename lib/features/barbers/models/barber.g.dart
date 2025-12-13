@@ -9,6 +9,7 @@ part of 'barber.dart';
 _$BarberImpl _$$BarberImplFromJson(Map<String, dynamic> json) => _$BarberImpl(
   id: (json['id'] as num).toInt(),
   name: json['name'] as String,
+  shopId: (json['shop_id'] as num?)?.toInt(),
   phone: json['phone'] as String?,
   locationLat: (json['location_lat'] as num?)?.toDouble(),
   locationLng: (json['location_lng'] as num?)?.toDouble(),
@@ -28,6 +29,7 @@ Map<String, dynamic> _$$BarberImplToJson(_$BarberImpl instance) =>
     <String, dynamic>{
       'id': instance.id,
       'name': instance.name,
+      'shop_id': instance.shopId,
       'phone': instance.phone,
       'location_lat': instance.locationLat,
       'location_lng': instance.locationLng,
