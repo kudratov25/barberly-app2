@@ -31,8 +31,12 @@ Map<String, dynamic> _$$DailyStatsImplToJson(_$DailyStatsImpl instance) =>
 _$DailyPointImpl _$$DailyPointImplFromJson(Map<String, dynamic> json) =>
     _$DailyPointImpl(
       date: json['date'] as String,
-      ordersCount: (json['orders_count'] as num).toInt(),
-      revenue: (json['revenue'] as num).toInt(),
+      ordersCount: (json['orders_count'] as num?)?.toInt() ?? 0,
+      walkinsCount: (json['walkins_count'] as num?)?.toInt() ?? 0,
+      totalCount: (json['total_count'] as num?)?.toInt() ?? 0,
+      revenue: (json['revenue'] as num?)?.toInt() ?? 0,
+      ordersRevenue: (json['orders_revenue'] as num?)?.toInt() ?? 0,
+      walkinsRevenue: (json['walkins_revenue'] as num?)?.toInt() ?? 0,
       avgTicket: (json['avg_ticket'] as num?)?.toInt(),
     );
 
@@ -40,20 +44,32 @@ Map<String, dynamic> _$$DailyPointImplToJson(_$DailyPointImpl instance) =>
     <String, dynamic>{
       'date': instance.date,
       'orders_count': instance.ordersCount,
+      'walkins_count': instance.walkinsCount,
+      'total_count': instance.totalCount,
       'revenue': instance.revenue,
+      'orders_revenue': instance.ordersRevenue,
+      'walkins_revenue': instance.walkinsRevenue,
       'avg_ticket': instance.avgTicket,
     };
 
 _$DailyTotalsImpl _$$DailyTotalsImplFromJson(Map<String, dynamic> json) =>
     _$DailyTotalsImpl(
-      ordersCount: (json['orders_count'] as num).toInt(),
-      revenue: (json['revenue'] as num).toInt(),
+      ordersCount: (json['orders_count'] as num?)?.toInt() ?? 0,
+      walkinsCount: (json['walkins_count'] as num?)?.toInt() ?? 0,
+      totalCount: (json['total_count'] as num?)?.toInt() ?? 0,
+      revenue: (json['revenue'] as num?)?.toInt() ?? 0,
+      ordersRevenue: (json['orders_revenue'] as num?)?.toInt() ?? 0,
+      walkinsRevenue: (json['walkins_revenue'] as num?)?.toInt() ?? 0,
     );
 
 Map<String, dynamic> _$$DailyTotalsImplToJson(_$DailyTotalsImpl instance) =>
     <String, dynamic>{
       'orders_count': instance.ordersCount,
+      'walkins_count': instance.walkinsCount,
+      'total_count': instance.totalCount,
       'revenue': instance.revenue,
+      'orders_revenue': instance.ordersRevenue,
+      'walkins_revenue': instance.walkinsRevenue,
     };
 
 _$MonthlyStatsImpl _$$MonthlyStatsImplFromJson(
@@ -86,8 +102,12 @@ Map<String, dynamic> _$$MonthlyStatsImplToJson(_$MonthlyStatsImpl instance) =>
 _$MonthlyPointImpl _$$MonthlyPointImplFromJson(Map<String, dynamic> json) =>
     _$MonthlyPointImpl(
       month: json['month'] as String,
-      ordersCount: (json['orders_count'] as num).toInt(),
-      revenue: (json['revenue'] as num).toInt(),
+      ordersCount: (json['orders_count'] as num?)?.toInt() ?? 0,
+      walkinsCount: (json['walkins_count'] as num?)?.toInt() ?? 0,
+      totalCount: (json['total_count'] as num?)?.toInt() ?? 0,
+      revenue: (json['revenue'] as num?)?.toInt() ?? 0,
+      ordersRevenue: (json['orders_revenue'] as num?)?.toInt() ?? 0,
+      walkinsRevenue: (json['walkins_revenue'] as num?)?.toInt() ?? 0,
       shops: (json['shops'] as num?)?.toInt(),
     );
 
@@ -95,21 +115,33 @@ Map<String, dynamic> _$$MonthlyPointImplToJson(_$MonthlyPointImpl instance) =>
     <String, dynamic>{
       'month': instance.month,
       'orders_count': instance.ordersCount,
+      'walkins_count': instance.walkinsCount,
+      'total_count': instance.totalCount,
       'revenue': instance.revenue,
+      'orders_revenue': instance.ordersRevenue,
+      'walkins_revenue': instance.walkinsRevenue,
       'shops': instance.shops,
     };
 
 _$MonthlyTotalsImpl _$$MonthlyTotalsImplFromJson(Map<String, dynamic> json) =>
     _$MonthlyTotalsImpl(
-      ordersCount: (json['orders_count'] as num).toInt(),
-      revenue: (json['revenue'] as num).toInt(),
+      ordersCount: (json['orders_count'] as num?)?.toInt() ?? 0,
+      walkinsCount: (json['walkins_count'] as num?)?.toInt() ?? 0,
+      totalCount: (json['total_count'] as num?)?.toInt() ?? 0,
+      revenue: (json['revenue'] as num?)?.toInt() ?? 0,
+      ordersRevenue: (json['orders_revenue'] as num?)?.toInt() ?? 0,
+      walkinsRevenue: (json['walkins_revenue'] as num?)?.toInt() ?? 0,
       shops: (json['shops'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$$MonthlyTotalsImplToJson(_$MonthlyTotalsImpl instance) =>
     <String, dynamic>{
       'orders_count': instance.ordersCount,
+      'walkins_count': instance.walkinsCount,
+      'total_count': instance.totalCount,
       'revenue': instance.revenue,
+      'orders_revenue': instance.ordersRevenue,
+      'walkins_revenue': instance.walkinsRevenue,
       'shops': instance.shops,
     };
 

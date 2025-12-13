@@ -5,6 +5,7 @@ class Storage {
   static const String _tokenKey = 'auth_token';
   static const String _ratedOrdersKey = 'rated_orders';
   static const String _orderRatingsKey = 'order_ratings'; // ["123=5", "124=4"]
+  static const String _themeModeKey = 'theme_mode'; // system | light | dark
 
   /// Save authentication token
   static Future<void> saveToken(String token) async {
@@ -34,6 +35,20 @@ class Storage {
   static Future<void> clearAll() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
+  }
+
+  /// Save theme mode preference: "system", "light", or "dark"
+  static Future<void> saveThemeMode(String mode) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_themeModeKey, mode);
+  }
+
+  /// Get theme mode preference: "system", "light", or "dark"
+  static Future<String> getThemeMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    final v = prefs.getString(_themeModeKey);
+    if (v == 'light' || v == 'dark' || v == 'system') return v!;
+    return 'system';
   }
 
   /// Get locally cached rated order IDs (used to suppress duplicate rating prompts)

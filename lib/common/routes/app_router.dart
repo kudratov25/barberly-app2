@@ -12,6 +12,7 @@ import 'package:mobile/features/orders/screens/new_order_screen.dart';
 import 'package:mobile/features/orders/screens/order_detail_screen.dart';
 import 'package:mobile/features/orders/screens/orders_list_screen.dart';
 import 'package:mobile/features/profile/screens/profile_screen.dart';
+import 'package:mobile/features/profile/screens/settings_screen.dart';
 import 'package:mobile/features/ratings/screens/create_rating_screen.dart';
 import 'package:mobile/features/services/screens/service_detail_screen.dart';
 import 'package:mobile/features/services/screens/services_list_screen.dart';
@@ -158,6 +159,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/profile',
         builder: (context, state) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: '/settings',
+        builder: (context, state) => const SettingsScreen(),
       ),
     ],
   );

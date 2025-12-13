@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/common/providers/providers.dart';
 import 'package:mobile/common/widgets/bottom_nav_bar.dart';
+import 'package:mobile/features/orders/models/client_timeline_item.dart';
 import 'package:mobile/features/orders/models/order.dart';
 import 'package:mobile/features/shops/services/shop_service.dart';
 import 'package:intl/intl.dart';
@@ -11,12 +12,11 @@ import 'package:intl/intl.dart';
 class OrdersListScreen extends ConsumerWidget {
   const OrdersListScreen({super.key});
 
-  int _countNewOrders(List<Order> orders) {
-    return orders
-        .where((order) =>
-            order.status.toLowerCase() == 'pending' ||
-            order.status.toLowerCase() == 'in_progress')
-        .length;
+  int _countNewItems(List<ClientTimelineItem> items) {
+    return items.where((item) {
+      final s = item.status.toLowerCase();
+      return s == 'pending' || s == 'in_progress' || s == 'started';
+    }).length;
   }
 
   Color _getStatusColor(String status) {
@@ -43,12 +43,11 @@ class OrdersListScreen extends ConsumerWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
-          FutureBuilder<PaginatedResponse<Order>>(
-            future: ref.read(orderServiceProvider).listOrders(),
+          FutureBuilder<PaginatedResponse<ClientTimelineItem>>(
+            future: ref.read(orderServiceProvider).listClientTimeline(),
             builder: (context, snapshot) {
-              final newCount = snapshot.hasData
-                  ? _countNewOrders(snapshot.data!.data)
-                  : 0;
+              final newCount =
+                  snapshot.hasData ? _countNewItems(snapshot.data!.data) : 0;
               return Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: Badge(
@@ -64,8 +63,8 @@ class OrdersListScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: FutureBuilder<PaginatedResponse<Order>>(
-        future: ref.read(orderServiceProvider).listOrders(),
+      body: FutureBuilder<PaginatedResponse<ClientTimelineItem>>(
+        future: ref.read(orderServiceProvider).listClientTimeline(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -126,39 +125,20 @@ class OrdersListScreen extends ConsumerWidget {
             );
           }
 
-          final orders = snapshot.data!.data;
+          final items = snapshot.data!.data;
           
-          // Sort orders: newest first (by created_at, fallback to start_time)
-          final sortedOrders = List<Order>.from(orders);
-          sortedOrders.sort((a, b) {
+          // Sort by sort_time DESC (newest first)
+          final sortedItems = List<ClientTimelineItem>.from(items);
+          sortedItems.sort((a, b) {
             DateTime? aTime;
             DateTime? bTime;
-            
-            // Prefer created_at, fallback to start_time
             try {
-              aTime = a.createdAt != null && a.createdAt!.isNotEmpty
-                  ? DateTime.parse(a.createdAt!)
-                  : DateTime.parse(a.startTime);
-            } catch (_) {
-              try {
-                aTime = DateTime.parse(a.startTime);
-              } catch (_) {}
-            }
-            
+              if (a.sortTime != null) aTime = DateTime.parse(a.sortTime!);
+            } catch (_) {}
             try {
-              bTime = b.createdAt != null && b.createdAt!.isNotEmpty
-                  ? DateTime.parse(b.createdAt!)
-                  : DateTime.parse(b.startTime);
-            } catch (_) {
-              try {
-                bTime = DateTime.parse(b.startTime);
-              } catch (_) {}
-            }
-            
-            if (aTime != null && bTime != null) {
-              // Descending order (newest first)
-              return bTime.compareTo(aTime);
-            }
+              if (b.sortTime != null) bTime = DateTime.parse(b.sortTime!);
+            } catch (_) {}
+            if (aTime != null && bTime != null) return bTime.compareTo(aTime);
             if (aTime != null) return -1;
             if (bTime != null) return 1;
             return 0;
@@ -170,12 +150,18 @@ class OrdersListScreen extends ConsumerWidget {
             },
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
-              itemCount: sortedOrders.length,
+              itemCount: sortedItems.length,
               itemBuilder: (context, index) {
-                final order = sortedOrders[index];
+                final item = sortedItems[index];
+                if (item.isWalkIn) {
+                  return _WalkInCard(
+                    item: item,
+                    statusColor: _getStatusColor(item.status),
+                  );
+                }
                 return _OrderCard(
-                  order: order,
-                  statusColor: _getStatusColor(order.status),
+                  order: item.order!,
+                  statusColor: _getStatusColor(item.status),
                 );
               },
             ),
@@ -340,6 +326,140 @@ class _OrderCard extends StatelessWidget {
                           color: Color(0xFF757575)),
                     ],
                   ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _WalkInCard extends StatelessWidget {
+  final ClientTimelineItem item;
+  final Color statusColor;
+
+  const _WalkInCard({
+    required this.item,
+    required this.statusColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final walkIn = item.walkIn!;
+
+    DateTime? startDateTime;
+    try {
+      if (walkIn.startedAt != null) {
+        startDateTime = DateTime.parse(walkIn.startedAt!);
+      }
+    } catch (_) {}
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        onTap: () => context.push('/walkin/${walkIn.id}'),
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Walk-in',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: statusColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      walkIn.status.toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: statusColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(Icons.calendar_today,
+                      size: 14, color: Colors.grey.shade600),
+                  const SizedBox(width: 6),
+                  Text(
+                    startDateTime != null
+                        ? DateFormat('MMM dd, yyyy').format(startDateTime)
+                        : 'N/A',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Icon(Icons.access_time,
+                      size: 14, color: Colors.grey.shade600),
+                  const SizedBox(width: 6),
+                  Text(
+                    startDateTime != null
+                        ? DateFormat('HH:mm').format(startDateTime)
+                        : 'N/A',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(Icons.person,
+                      size: 14, color: Colors.grey.shade600),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      walkIn.barber?.name ?? 'Barber',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '${(walkIn.price ?? 0)} UZS',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF2196F3),
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right, color: Color(0xFF757575)),
                 ],
               ),
             ],

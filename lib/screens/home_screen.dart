@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/common/providers/providers.dart';
 import 'package:mobile/common/widgets/bottom_nav_bar.dart';
 import 'package:mobile/features/barbers/models/barber.dart';
+import 'package:mobile/features/orders/models/client_timeline_item.dart';
 import 'package:mobile/features/orders/models/order.dart';
 import 'package:mobile/features/shops/services/shop_service.dart';
 
@@ -373,18 +374,19 @@ class _Header extends StatelessWidget {
                 ],
               ),
             ),
-            FutureBuilder<PaginatedResponse<Order>>(
+            FutureBuilder<PaginatedResponse<ClientTimelineItem>>(
               future: ref
                   .read(orderServiceProvider)
-                  .listOrders(role: 'client'),
+                  .listClientTimeline(),
               builder: (context, snapshot) {
                 int newCount = 0;
                 if (snapshot.hasData) {
-                  newCount = snapshot.data!.data
-                      .where((order) =>
-                          order.status.toLowerCase() == 'pending' ||
-                          order.status.toLowerCase() == 'in_progress')
-                      .length;
+                  newCount = snapshot.data!.data.where((item) {
+                    final s = item.status.toLowerCase();
+                    return s == 'pending' ||
+                        s == 'in_progress' ||
+                        s == 'started';
+                  }).length;
                 }
                 return IconButton(
                   onPressed: () => context.push('/notifications'),
@@ -407,8 +409,8 @@ class _Header extends StatelessWidget {
           ],
         ),
         // Nearest upcoming booking in header
-        FutureBuilder<PaginatedResponse<Order>>(
-          future: ref.read(orderServiceProvider).listOrders(role: 'client'),
+        FutureBuilder<PaginatedResponse<ClientTimelineItem>>(
+          future: ref.read(orderServiceProvider).listClientTimeline(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const SizedBox.shrink();
@@ -420,6 +422,8 @@ class _Header extends StatelessWidget {
 
             final now = DateTime.now();
             final upcomingOrders = snapshot.data!.data
+                .where((item) => item.isOrder)
+                .map((item) => item.order!)
                 .where((order) {
                   // Only show pending or in_progress orders
                   final status = order.status.toLowerCase();
@@ -563,8 +567,8 @@ class _NextAppointmentSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<PaginatedResponse<Order>>(
-      future: ref.read(orderServiceProvider).listOrders(role: 'client'),
+    return FutureBuilder<PaginatedResponse<ClientTimelineItem>>(
+      future: ref.read(orderServiceProvider).listClientTimeline(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const SizedBox(
@@ -580,6 +584,8 @@ class _NextAppointmentSection extends StatelessWidget {
         // Find nearest upcoming booking (sorted by date and time)
         final now = DateTime.now();
         final upcomingOrders = snapshot.data!.data
+            .where((item) => item.isOrder)
+            .map((item) => item.order!)
             .where((order) {
               final status = order.status.toLowerCase();
               if (status != 'pending' && status != 'in_progress') {
@@ -846,30 +852,41 @@ class _EmptyNextAppointmentCard extends StatelessWidget {
   }
 }
 
-class _QuickActionsRow extends StatelessWidget {
+class _QuickActionsRow extends ConsumerWidget {
   const _QuickActionsRow();
 
   @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: const [
-        _QuickActionButton(
-          icon: Icons.search,
-          label: 'Search Barbers',
-          route: '/shops',
-        ),
-        _QuickActionButton(
-          icon: Icons.store_mall_directory_outlined,
-          label: 'Nearby Shops',
-          route: '/shops',
-        ),
-        _QuickActionButton(
-          icon: Icons.calendar_today_outlined,
-          label: 'My Bookings',
-          route: '/orders',
-        ),
-      ],
+  Widget build(BuildContext context, WidgetRef ref) {
+    return FutureBuilder<PaginatedResponse<ClientTimelineItem>>(
+      future: ref.read(orderServiceProvider).listClientTimeline(perPage: 100),
+      builder: (context, snapshot) {
+        final items =
+            snapshot.hasData ? snapshot.data!.data : <ClientTimelineItem>[];
+        final walkInCount = items.where((i) => i.isWalkIn).length;
+
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const _QuickActionButton(
+              icon: Icons.search,
+              label: 'Search Barbers',
+              route: '/shops',
+            ),
+            const _QuickActionButton(
+              icon: Icons.store_mall_directory_outlined,
+              label: 'Nearby Shops',
+              route: '/shops',
+            ),
+            _QuickActionButton(
+              icon: Icons.calendar_today_outlined,
+              label: 'My Bookings',
+              route: '/orders',
+              badgeCount: walkInCount,
+              badgeLabel: 'W',
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -878,11 +895,15 @@ class _QuickActionButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final String route;
+  final int? badgeCount;
+  final String? badgeLabel;
 
   const _QuickActionButton({
     required this.icon,
     required this.label,
     required this.route,
+    this.badgeCount,
+    this.badgeLabel,
   });
 
   @override
@@ -892,20 +913,51 @@ class _QuickActionButton extends StatelessWidget {
         children: [
           GestureDetector(
             onTap: () => context.push(route),
-            child: Container(
-              width: 60,
-              height: 60,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [Color(0xFF0A84FF), Color(0xFF4DA8FF)],
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [Color(0xFF0A84FF), Color(0xFF4DA8FF)],
+                    ),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: Colors.white,
+                    size: 26,
+                  ),
                 ),
-              ),
-              child: Icon(
-                icon,
-                color: Colors.white,
-                size: 26,
-              ),
+                if ((badgeCount ?? 0) > 0)
+                  Positioned(
+                    right: -6,
+                    top: -6,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                      child: Text(
+                        badgeLabel != null
+                            ? '$badgeLabel ${badgeCount!}'
+                            : '${badgeCount!}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
           const SizedBox(height: 8),
@@ -928,10 +980,10 @@ class _StatsCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return FutureBuilder<PaginatedResponse<Order>>(
+    return FutureBuilder<PaginatedResponse<ClientTimelineItem>>(
       future: ref
           .read(orderServiceProvider)
-          .listOrders(role: 'client', perPage: 100),
+          .listClientTimeline(perPage: 100),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Container(
@@ -954,11 +1006,12 @@ class _StatsCard extends ConsumerWidget {
           );
         }
 
-        final orders = snapshot.hasData ? snapshot.data!.data : <Order>[];
+        final items =
+            snapshot.hasData ? snapshot.data!.data : <ClientTimelineItem>[];
+        final orders = items.where((i) => i.isOrder).map((i) => i.order!).toList();
 
-        final totalOrders = orders.length;
-        final totalSpent =
-            orders.fold<int>(0, (sum, order) => sum + order.price);
+        final totalOrders = items.length;
+        final totalSpent = items.fold<int>(0, (sum, item) => sum + item.price);
 
         final serviceIds = <int>{};
         for (final order in orders) {

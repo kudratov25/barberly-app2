@@ -180,6 +180,16 @@ class _StatsContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDaily = dailyStats != null;
+    final ordersTotal =
+        isDaily ? dailyStats!.totals.ordersCount : monthlyStats!.totals.ordersCount;
+    final walkinsTotal =
+        isDaily ? dailyStats!.totals.walkinsCount : monthlyStats!.totals.walkinsCount;
+    final totalCount =
+        isDaily ? dailyStats!.totals.totalCount : monthlyStats!.totals.totalCount;
+    final revenueTotal =
+        isDaily ? dailyStats!.totals.revenue : monthlyStats!.totals.revenue;
+    final nf = NumberFormat.decimalPattern();
+    String fmt(int v) => nf.format(v);
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -189,10 +199,8 @@ class _StatsContent extends StatelessWidget {
           children: [
             Expanded(
               child: _SummaryCard(
-                title: 'Total Orders',
-                value: isDaily
-                    ? '${dailyStats!.totals.ordersCount}'
-                    : '${monthlyStats!.totals.ordersCount}',
+                title: 'Orders',
+                value: fmt(ordersTotal),
                 icon: Icons.receipt_long,
                 color: const Color(0xFF0A84FF),
               ),
@@ -200,10 +208,30 @@ class _StatsContent extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: _SummaryCard(
-                title: 'Total Revenue',
-                value: isDaily
-                    ? '${dailyStats!.totals.revenue}'
-                    : '${monthlyStats!.totals.revenue}',
+                title: 'Walk-ins',
+                value: fmt(walkinsTotal),
+                icon: Icons.directions_walk,
+                color: const Color(0xFFF59E0B),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _SummaryCard(
+                title: 'Total',
+                value: fmt(totalCount),
+                icon: Icons.event_note,
+                color: const Color(0xFF6366F1),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _SummaryCard(
+                title: 'Revenue',
+                value: '${fmt(revenueTotal)} UZS',
                 icon: Icons.payments,
                 color: const Color(0xFF10B981),
               ),
@@ -277,15 +305,20 @@ class _StatsContent extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               if (isDaily)
-                ...dailyStats!.points.take(10).map((point) => _DataRow(
-                      date: DateFormat('MMM dd').format(DateTime.parse(point.date)),
+                ...dailyStats!.points.map((point) => _DataRow(
+                      date:
+                          DateFormat('MMM dd').format(DateTime.parse(point.date)),
                       orders: point.ordersCount,
+                      walkins: point.walkinsCount,
+                      total: point.totalCount,
                       revenue: point.revenue,
                     ))
               else
-                ...monthlyStats!.points.take(10).map((point) => _DataRow(
+                ...monthlyStats!.points.map((point) => _DataRow(
                       date: point.month,
                       orders: point.ordersCount,
+                      walkins: point.walkinsCount,
+                      total: point.totalCount,
                       revenue: point.revenue,
                     )),
             ],
@@ -297,7 +330,7 @@ class _StatsContent extends StatelessWidget {
 
   Widget _buildDailyChart(List<DailyPoint> points) {
     final maxOrders = points
-            .map((p) => p.ordersCount)
+            .map((p) => p.totalCount)
             .reduce((a, b) => a > b ? a : b)
             .toDouble() +
         5;
@@ -389,6 +422,23 @@ class _StatsContent extends StatelessWidget {
               color: const Color(0xFF0A84FF).withOpacity(0.1),
             ),
           ),
+          // Walk-ins line
+          LineChartBarData(
+            spots: points.asMap().entries.map((entry) {
+              return FlSpot(
+                entry.key.toDouble(),
+                entry.value.walkinsCount.toDouble(),
+              );
+            }).toList(),
+            isCurved: true,
+            color: const Color(0xFFF59E0B),
+            barWidth: 3,
+            isStrokeCapRound: true,
+            dotData: const FlDotData(show: false),
+            belowBarData: BarAreaData(
+              show: false,
+            ),
+          ),
         ],
       ),
     );
@@ -396,7 +446,7 @@ class _StatsContent extends StatelessWidget {
 
   Widget _buildMonthlyChart(List<MonthlyPoint> points) {
     final maxOrders = points
-            .map((p) => p.ordersCount)
+            .map((p) => p.totalCount)
             .reduce((a, b) => a > b ? a : b)
             .toDouble() +
         5;
@@ -477,7 +527,15 @@ class _StatsContent extends StatelessWidget {
               BarChartRodData(
                 toY: entry.value.ordersCount.toDouble(),
                 color: const Color(0xFF0A84FF),
-                width: 20,
+                width: 8,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(4),
+                ),
+              ),
+              BarChartRodData(
+                toY: entry.value.walkinsCount.toDouble(),
+                color: const Color(0xFFF59E0B),
+                width: 8,
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(4),
                 ),
@@ -560,16 +618,21 @@ class _SummaryCard extends StatelessWidget {
 class _DataRow extends StatelessWidget {
   final String date;
   final int orders;
+  final int walkins;
+  final int total;
   final int revenue;
 
   const _DataRow({
     required this.date,
     required this.orders,
+    required this.walkins,
+    required this.total,
     required this.revenue,
   });
 
   @override
   Widget build(BuildContext context) {
+    final nf = NumberFormat.decimalPattern();
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
@@ -586,7 +649,7 @@ class _DataRow extends StatelessWidget {
             ),
           ),
           Text(
-            '$orders orders',
+            '${nf.format(total)} (O:${nf.format(orders)} W:${nf.format(walkins)})',
             style: const TextStyle(
               fontSize: 14,
               color: Color(0xFF6B7280),
@@ -594,7 +657,7 @@ class _DataRow extends StatelessWidget {
           ),
           const SizedBox(width: 16),
           Text(
-            '$revenue UZS',
+            '${nf.format(revenue)} UZS',
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,

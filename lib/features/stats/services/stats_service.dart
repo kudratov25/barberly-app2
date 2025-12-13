@@ -36,12 +36,13 @@ class StatsService {
     // Normalize totals
     if (m['totals'] is Map) {
       final totals = Map<String, dynamic>.from(m['totals']);
-      if (totals.containsKey('orders_count')) {
-        totals['orders_count'] = _toInt(totals['orders_count']) ?? 0;
-      }
-      if (totals.containsKey('revenue')) {
-        totals['revenue'] = _toInt(totals['revenue']) ?? 0;
-      }
+      totals['orders_count'] = _toInt(totals['orders_count']) ?? 0;
+      totals['walkins_count'] = _toInt(totals['walkins_count']) ?? 0;
+      totals['revenue'] = _toInt(totals['revenue']) ?? 0;
+      totals['orders_revenue'] = _toInt(totals['orders_revenue']) ?? 0;
+      totals['walkins_revenue'] = _toInt(totals['walkins_revenue']) ?? 0;
+      totals['total_count'] = _toInt(totals['total_count']) ??
+          ((totals['orders_count'] as int) + (totals['walkins_count'] as int));
       m['totals'] = totals;
     }
     
@@ -50,12 +51,13 @@ class StatsService {
       m['points'] = (m['points'] as List).map((p) {
         if (p is! Map) return p;
         final pm = Map<String, dynamic>.from(p);
-        if (pm.containsKey('orders_count')) {
-          pm['orders_count'] = _toInt(pm['orders_count']) ?? 0;
-        }
-        if (pm.containsKey('revenue')) {
-          pm['revenue'] = _toInt(pm['revenue']) ?? 0;
-        }
+        pm['orders_count'] = _toInt(pm['orders_count']) ?? 0;
+        pm['walkins_count'] = _toInt(pm['walkins_count']) ?? 0;
+        pm['revenue'] = _toInt(pm['revenue']) ?? 0;
+        pm['orders_revenue'] = _toInt(pm['orders_revenue']) ?? 0;
+        pm['walkins_revenue'] = _toInt(pm['walkins_revenue']) ?? 0;
+        pm['total_count'] = _toInt(pm['total_count']) ??
+            ((pm['orders_count'] as int) + (pm['walkins_count'] as int));
         if (pm.containsKey('avg_ticket')) {
           pm['avg_ticket'] = _toInt(pm['avg_ticket']);
         }
@@ -72,12 +74,13 @@ class StatsService {
     // Normalize totals
     if (m['totals'] is Map) {
       final totals = Map<String, dynamic>.from(m['totals']);
-      if (totals.containsKey('orders_count')) {
-        totals['orders_count'] = _toInt(totals['orders_count']) ?? 0;
-      }
-      if (totals.containsKey('revenue')) {
-        totals['revenue'] = _toInt(totals['revenue']) ?? 0;
-      }
+      totals['orders_count'] = _toInt(totals['orders_count']) ?? 0;
+      totals['walkins_count'] = _toInt(totals['walkins_count']) ?? 0;
+      totals['revenue'] = _toInt(totals['revenue']) ?? 0;
+      totals['orders_revenue'] = _toInt(totals['orders_revenue']) ?? 0;
+      totals['walkins_revenue'] = _toInt(totals['walkins_revenue']) ?? 0;
+      totals['total_count'] = _toInt(totals['total_count']) ??
+          ((totals['orders_count'] as int) + (totals['walkins_count'] as int));
       m['totals'] = totals;
     }
     
@@ -86,12 +89,13 @@ class StatsService {
       m['points'] = (m['points'] as List).map((p) {
         if (p is! Map) return p;
         final pm = Map<String, dynamic>.from(p);
-        if (pm.containsKey('orders_count')) {
-          pm['orders_count'] = _toInt(pm['orders_count']) ?? 0;
-        }
-        if (pm.containsKey('revenue')) {
-          pm['revenue'] = _toInt(pm['revenue']) ?? 0;
-        }
+        pm['orders_count'] = _toInt(pm['orders_count']) ?? 0;
+        pm['walkins_count'] = _toInt(pm['walkins_count']) ?? 0;
+        pm['revenue'] = _toInt(pm['revenue']) ?? 0;
+        pm['orders_revenue'] = _toInt(pm['orders_revenue']) ?? 0;
+        pm['walkins_revenue'] = _toInt(pm['walkins_revenue']) ?? 0;
+        pm['total_count'] = _toInt(pm['total_count']) ??
+            ((pm['orders_count'] as int) + (pm['walkins_count'] as int));
         return pm;
       }).toList();
     }

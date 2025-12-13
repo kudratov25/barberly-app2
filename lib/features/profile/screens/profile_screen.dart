@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile/common/providers/providers.dart';
 import 'package:mobile/common/widgets/bottom_nav_bar.dart';
-import 'package:mobile/features/orders/models/order.dart';
+import 'package:mobile/features/orders/models/client_timeline_item.dart';
 import 'package:mobile/features/shops/services/shop_service.dart';
 
 /// Profile screen with modern design
@@ -57,8 +57,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: cs.background,
       body: FutureBuilder(
         future: ref.read(authServiceProvider).getCurrentUser(),
         builder: (context, snapshot) {
@@ -116,7 +117,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   margin: const EdgeInsets.all(16),
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: cs.surface,
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
@@ -189,27 +190,27 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       const SizedBox(height: 16),
                       Text(
                         user.name,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF111827),
+                          color: cs.onSurface,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         user.phone,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
-                          color: Color(0xFF6B7280),
+                          color: cs.onSurface.withOpacity(0.7),
                         ),
                       ),
                       if (user.email != null) ...[
                         const SizedBox(height: 4),
                         Text(
                           user.email!,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
-                            color: Color(0xFF6B7280),
+                            color: cs.onSurface.withOpacity(0.7),
                           ),
                         ),
                       ],
@@ -222,10 +223,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: FutureBuilder<PaginatedResponse<Order>>(
+                  child: FutureBuilder<PaginatedResponse<ClientTimelineItem>>(
                     future: ref
                         .read(orderServiceProvider)
-                        .listOrders(role: 'client', perPage: 100),
+                        .listClientTimeline(perPage: 100),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const SizedBox(
@@ -234,15 +235,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         );
                       }
 
-                      final orders = snapshot.hasData ? snapshot.data!.data : <Order>[];
-                      final totalOrders = orders.length;
+                      final items = snapshot.hasData
+                          ? snapshot.data!.data
+                          : <ClientTimelineItem>[];
+                      final totalBookings = items.length;
+                      final ordersCount = items.where((i) => i.isOrder).length;
+                      final walkInCount = items.where((i) => i.isWalkIn).length;
                       final totalSpent =
-                          orders.fold<int>(0, (sum, order) => sum + order.price);
+                          items.fold<int>(0, (sum, item) => sum + item.price);
 
                       return Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: cs.surface,
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
@@ -255,12 +260,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               'Statistics',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w700,
-                                color: Color(0xFF111827),
+                                color: cs.onSurface,
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -268,9 +273,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               children: [
                                 Expanded(
                                   child: _StatItem(
-                                    icon: Icons.receipt_long,
-                                    label: 'Total Orders',
-                                    value: '$totalOrders',
+                                    icon: Icons.event_note,
+                                    label: 'Total Bookings',
+                                    value: '$totalBookings ta',
                                     color: const Color(0xFF0A84FF),
                                   ),
                                 ),
@@ -281,6 +286,28 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                     label: 'Total Spent',
                                     value: '${totalSpent} UZS',
                                     color: const Color(0xFF10B981),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _StatItem(
+                                    icon: Icons.receipt_long,
+                                    label: 'Orders',
+                                    value: '$ordersCount ta',
+                                    color: const Color(0xFF6366F1),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _StatItem(
+                                    icon: Icons.directions_walk,
+                                    label: 'Walk-ins',
+                                    value: '$walkInCount ta',
+                                    color: const Color(0xFFF59E0B),
                                   ),
                                 ),
                               ],
@@ -312,11 +339,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         icon: Icons.settings,
                         title: 'Settings',
                         subtitle: 'App settings and preferences',
-                        onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Settings coming soon')),
-                          );
-                        },
+                        onTap: () => context.push('/settings'),
                       ),
                       const SizedBox(height: 8),
                       _MenuTile(

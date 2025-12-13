@@ -1,10 +1,14 @@
+// ignore_for_file: invalid_annotation_target
+
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:json_annotation/json_annotation.dart';
 
 part 'stats.freezed.dart';
 part 'stats.g.dart';
 
 @freezed
 class DailyStats with _$DailyStats {
+  @JsonSerializable(fieldRename: FieldRename.snake)
   const factory DailyStats({
     String? period,
     String? from,
@@ -20,11 +24,16 @@ class DailyStats with _$DailyStats {
 
 @freezed
 class DailyPoint with _$DailyPoint {
+  @JsonSerializable(fieldRename: FieldRename.snake)
   const factory DailyPoint({
     required String date,
-    @JsonKey(name: 'orders_count') required int ordersCount,
-    required int revenue,
-    @JsonKey(name: 'avg_ticket') int? avgTicket,
+    @Default(0) int ordersCount,
+    @Default(0) int walkinsCount,
+    @Default(0) int totalCount,
+    @Default(0) int revenue,
+    @Default(0) int ordersRevenue,
+    @Default(0) int walkinsRevenue,
+    int? avgTicket,
   }) = _DailyPoint;
 
   factory DailyPoint.fromJson(Map<String, dynamic> json) =>
@@ -33,9 +42,14 @@ class DailyPoint with _$DailyPoint {
 
 @freezed
 class DailyTotals with _$DailyTotals {
+  @JsonSerializable(fieldRename: FieldRename.snake)
   const factory DailyTotals({
-    @JsonKey(name: 'orders_count') required int ordersCount,
-    required int revenue,
+    @Default(0) int ordersCount,
+    @Default(0) int walkinsCount,
+    @Default(0) int totalCount,
+    @Default(0) int revenue,
+    @Default(0) int ordersRevenue,
+    @Default(0) int walkinsRevenue,
   }) = _DailyTotals;
 
   factory DailyTotals.fromJson(Map<String, dynamic> json) =>
@@ -44,12 +58,13 @@ class DailyTotals with _$DailyTotals {
 
 @freezed
 class MonthlyStats with _$MonthlyStats {
+  @JsonSerializable(fieldRename: FieldRename.snake)
   const factory MonthlyStats({
     required int year,
     required String currency,
     required List<MonthlyPoint> points,
     required MonthlyTotals totals,
-    @JsonKey(name: 'current_month') MonthlyPoint? currentMonth,
+    MonthlyPoint? currentMonth,
     MonthlyComparison? comparison,
   }) = _MonthlyStats;
 
@@ -59,10 +74,15 @@ class MonthlyStats with _$MonthlyStats {
 
 @freezed
 class MonthlyPoint with _$MonthlyPoint {
+  @JsonSerializable(fieldRename: FieldRename.snake)
   const factory MonthlyPoint({
     required String month,
-    @JsonKey(name: 'orders_count') required int ordersCount,
-    required int revenue,
+    @Default(0) int ordersCount,
+    @Default(0) int walkinsCount,
+    @Default(0) int totalCount,
+    @Default(0) int revenue,
+    @Default(0) int ordersRevenue,
+    @Default(0) int walkinsRevenue,
     int? shops,
   }) = _MonthlyPoint;
 
@@ -72,9 +92,14 @@ class MonthlyPoint with _$MonthlyPoint {
 
 @freezed
 class MonthlyTotals with _$MonthlyTotals {
+  @JsonSerializable(fieldRename: FieldRename.snake)
   const factory MonthlyTotals({
-    @JsonKey(name: 'orders_count') required int ordersCount,
-    required int revenue,
+    @Default(0) int ordersCount,
+    @Default(0) int walkinsCount,
+    @Default(0) int totalCount,
+    @Default(0) int revenue,
+    @Default(0) int ordersRevenue,
+    @Default(0) int walkinsRevenue,
     int? shops,
   }) = _MonthlyTotals;
 
@@ -84,10 +109,11 @@ class MonthlyTotals with _$MonthlyTotals {
 
 @freezed
 class MonthlyComparison with _$MonthlyComparison {
+  @JsonSerializable(fieldRename: FieldRename.snake)
   const factory MonthlyComparison({
-    @JsonKey(name: 'previous_year') required int previousYear,
-    @JsonKey(name: 'previous_revenue') required int previousRevenue,
-    @JsonKey(name: 'change_percent') double? changePercent,
+    required int previousYear,
+    required int previousRevenue,
+    double? changePercent,
   }) = _MonthlyComparison;
 
   factory MonthlyComparison.fromJson(Map<String, dynamic> json) =>

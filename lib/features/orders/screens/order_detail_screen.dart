@@ -211,6 +211,14 @@ class OrderDetailScreen extends ConsumerWidget {
                               label: 'Barber',
                               value: order.barber?.name ?? '—',
                             ),
+                            if ((order.barber?.phone ?? '').trim().isNotEmpty) ...[
+                              const SizedBox(height: 10),
+                              _InfoRow(
+                                icon: Icons.phone,
+                                label: 'Barber phone',
+                                value: order.barber!.phone!.trim(),
+                              ),
+                            ],
                           ],
                         ),
                       ),

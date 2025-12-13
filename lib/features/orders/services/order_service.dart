@@ -1,7 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:mobile/api/client.dart';
 import 'package:mobile/api/endpoints.dart';
+import 'package:mobile/features/orders/models/client_timeline_item.dart';
 import 'package:mobile/features/orders/models/order.dart';
+import 'package:mobile/features/walkin/models/walkin.dart';
 import 'package:mobile/features/shops/services/shop_service.dart';
 
 /// Order service for managing orders
@@ -72,6 +74,21 @@ class OrderService {
     return m;
   }
 
+  Map<String, dynamic> _normalizeWalkInJson(Map<String, dynamic> json) {
+    final m = Map<String, dynamic>.from(json);
+    if (m.containsKey('id')) m['id'] = _toInt(m['id']) ?? 0;
+    if (m.containsKey('barber_id')) m['barber_id'] = _toInt(m['barber_id']) ?? 0;
+    if (m.containsKey('price')) m['price'] = _toInt(m['price']);
+
+    final barber = m['barber'];
+    if (barber is Map) {
+      final bm = Map<String, dynamic>.from(barber);
+      if (bm.containsKey('id')) bm['id'] = _toInt(bm['id']) ?? 0;
+      m['barber'] = bm;
+    }
+    return m;
+  }
+
   /// List orders with filters
   Future<PaginatedResponse<Order>> listOrders({
     String? role,
@@ -98,6 +115,44 @@ class OrderService {
         (json) => Order.fromJson(
           _normalizeOrderJson(json as Map<String, dynamic>),
         ),
+      );
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// List combined client timeline: orders + walk-ins.
+  /// Backend returns data.data items with:
+  /// - type: "order" | "walk_in"
+  /// - sort_time: ISO string for sorting
+  Future<PaginatedResponse<ClientTimelineItem>> listClientTimeline({
+    String? status,
+    String? from,
+    String? to,
+    int? perPage,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{'role': 'client'};
+      if (status != null) queryParams['status'] = status;
+      if (from != null) queryParams['from'] = from;
+      if (to != null) queryParams['to'] = to;
+      if (perPage != null) queryParams['per_page'] = perPage;
+
+      final response = await _apiClient.dio.get(
+        ApiEndpoints.orders,
+        queryParameters: queryParams,
+      );
+
+      return PaginatedResponse<ClientTimelineItem>.fromJson(
+        response.data['data'],
+        (json) {
+          final map = Map<String, dynamic>.from(json as Map<String, dynamic>);
+          return ClientTimelineItem.fromJson(
+            json: map,
+            parseOrder: (m) => Order.fromJson(_normalizeOrderJson(m)),
+            parseWalkIn: (m) => WalkIn.fromJson(_normalizeWalkInJson(m)),
+          );
+        },
       );
     } on DioException catch (e) {
       throw _handleError(e);

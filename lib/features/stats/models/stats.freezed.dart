@@ -196,7 +196,8 @@ class __$$DailyStatsImplCopyWithImpl<$Res>
 }
 
 /// @nodoc
-@JsonSerializable()
+
+@JsonSerializable(fieldRename: FieldRename.snake)
 class _$DailyStatsImpl implements _DailyStats {
   const _$DailyStatsImpl({
     this.period,
@@ -315,10 +316,12 @@ DailyPoint _$DailyPointFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$DailyPoint {
   String get date => throw _privateConstructorUsedError;
-  @JsonKey(name: 'orders_count')
   int get ordersCount => throw _privateConstructorUsedError;
+  int get walkinsCount => throw _privateConstructorUsedError;
+  int get totalCount => throw _privateConstructorUsedError;
   int get revenue => throw _privateConstructorUsedError;
-  @JsonKey(name: 'avg_ticket')
+  int get ordersRevenue => throw _privateConstructorUsedError;
+  int get walkinsRevenue => throw _privateConstructorUsedError;
   int? get avgTicket => throw _privateConstructorUsedError;
 
   /// Serializes this DailyPoint to a JSON map.
@@ -340,9 +343,13 @@ abstract class $DailyPointCopyWith<$Res> {
   @useResult
   $Res call({
     String date,
-    @JsonKey(name: 'orders_count') int ordersCount,
+    int ordersCount,
+    int walkinsCount,
+    int totalCount,
     int revenue,
-    @JsonKey(name: 'avg_ticket') int? avgTicket,
+    int ordersRevenue,
+    int walkinsRevenue,
+    int? avgTicket,
   });
 }
 
@@ -363,7 +370,11 @@ class _$DailyPointCopyWithImpl<$Res, $Val extends DailyPoint>
   $Res call({
     Object? date = null,
     Object? ordersCount = null,
+    Object? walkinsCount = null,
+    Object? totalCount = null,
     Object? revenue = null,
+    Object? ordersRevenue = null,
+    Object? walkinsRevenue = null,
     Object? avgTicket = freezed,
   }) {
     return _then(
@@ -376,9 +387,25 @@ class _$DailyPointCopyWithImpl<$Res, $Val extends DailyPoint>
                 ? _value.ordersCount
                 : ordersCount // ignore: cast_nullable_to_non_nullable
                       as int,
+            walkinsCount: null == walkinsCount
+                ? _value.walkinsCount
+                : walkinsCount // ignore: cast_nullable_to_non_nullable
+                      as int,
+            totalCount: null == totalCount
+                ? _value.totalCount
+                : totalCount // ignore: cast_nullable_to_non_nullable
+                      as int,
             revenue: null == revenue
                 ? _value.revenue
                 : revenue // ignore: cast_nullable_to_non_nullable
+                      as int,
+            ordersRevenue: null == ordersRevenue
+                ? _value.ordersRevenue
+                : ordersRevenue // ignore: cast_nullable_to_non_nullable
+                      as int,
+            walkinsRevenue: null == walkinsRevenue
+                ? _value.walkinsRevenue
+                : walkinsRevenue // ignore: cast_nullable_to_non_nullable
                       as int,
             avgTicket: freezed == avgTicket
                 ? _value.avgTicket
@@ -401,9 +428,13 @@ abstract class _$$DailyPointImplCopyWith<$Res>
   @useResult
   $Res call({
     String date,
-    @JsonKey(name: 'orders_count') int ordersCount,
+    int ordersCount,
+    int walkinsCount,
+    int totalCount,
     int revenue,
-    @JsonKey(name: 'avg_ticket') int? avgTicket,
+    int ordersRevenue,
+    int walkinsRevenue,
+    int? avgTicket,
   });
 }
 
@@ -423,7 +454,11 @@ class __$$DailyPointImplCopyWithImpl<$Res>
   $Res call({
     Object? date = null,
     Object? ordersCount = null,
+    Object? walkinsCount = null,
+    Object? totalCount = null,
     Object? revenue = null,
+    Object? ordersRevenue = null,
+    Object? walkinsRevenue = null,
     Object? avgTicket = freezed,
   }) {
     return _then(
@@ -436,9 +471,25 @@ class __$$DailyPointImplCopyWithImpl<$Res>
             ? _value.ordersCount
             : ordersCount // ignore: cast_nullable_to_non_nullable
                   as int,
+        walkinsCount: null == walkinsCount
+            ? _value.walkinsCount
+            : walkinsCount // ignore: cast_nullable_to_non_nullable
+                  as int,
+        totalCount: null == totalCount
+            ? _value.totalCount
+            : totalCount // ignore: cast_nullable_to_non_nullable
+                  as int,
         revenue: null == revenue
             ? _value.revenue
             : revenue // ignore: cast_nullable_to_non_nullable
+                  as int,
+        ordersRevenue: null == ordersRevenue
+            ? _value.ordersRevenue
+            : ordersRevenue // ignore: cast_nullable_to_non_nullable
+                  as int,
+        walkinsRevenue: null == walkinsRevenue
+            ? _value.walkinsRevenue
+            : walkinsRevenue // ignore: cast_nullable_to_non_nullable
                   as int,
         avgTicket: freezed == avgTicket
             ? _value.avgTicket
@@ -450,13 +501,18 @@ class __$$DailyPointImplCopyWithImpl<$Res>
 }
 
 /// @nodoc
-@JsonSerializable()
+
+@JsonSerializable(fieldRename: FieldRename.snake)
 class _$DailyPointImpl implements _DailyPoint {
   const _$DailyPointImpl({
     required this.date,
-    @JsonKey(name: 'orders_count') required this.ordersCount,
-    required this.revenue,
-    @JsonKey(name: 'avg_ticket') this.avgTicket,
+    this.ordersCount = 0,
+    this.walkinsCount = 0,
+    this.totalCount = 0,
+    this.revenue = 0,
+    this.ordersRevenue = 0,
+    this.walkinsRevenue = 0,
+    this.avgTicket,
   });
 
   factory _$DailyPointImpl.fromJson(Map<String, dynamic> json) =>
@@ -465,17 +521,29 @@ class _$DailyPointImpl implements _DailyPoint {
   @override
   final String date;
   @override
-  @JsonKey(name: 'orders_count')
+  @JsonKey()
   final int ordersCount;
   @override
+  @JsonKey()
+  final int walkinsCount;
+  @override
+  @JsonKey()
+  final int totalCount;
+  @override
+  @JsonKey()
   final int revenue;
   @override
-  @JsonKey(name: 'avg_ticket')
+  @JsonKey()
+  final int ordersRevenue;
+  @override
+  @JsonKey()
+  final int walkinsRevenue;
+  @override
   final int? avgTicket;
 
   @override
   String toString() {
-    return 'DailyPoint(date: $date, ordersCount: $ordersCount, revenue: $revenue, avgTicket: $avgTicket)';
+    return 'DailyPoint(date: $date, ordersCount: $ordersCount, walkinsCount: $walkinsCount, totalCount: $totalCount, revenue: $revenue, ordersRevenue: $ordersRevenue, walkinsRevenue: $walkinsRevenue, avgTicket: $avgTicket)';
   }
 
   @override
@@ -486,15 +554,32 @@ class _$DailyPointImpl implements _DailyPoint {
             (identical(other.date, date) || other.date == date) &&
             (identical(other.ordersCount, ordersCount) ||
                 other.ordersCount == ordersCount) &&
+            (identical(other.walkinsCount, walkinsCount) ||
+                other.walkinsCount == walkinsCount) &&
+            (identical(other.totalCount, totalCount) ||
+                other.totalCount == totalCount) &&
             (identical(other.revenue, revenue) || other.revenue == revenue) &&
+            (identical(other.ordersRevenue, ordersRevenue) ||
+                other.ordersRevenue == ordersRevenue) &&
+            (identical(other.walkinsRevenue, walkinsRevenue) ||
+                other.walkinsRevenue == walkinsRevenue) &&
             (identical(other.avgTicket, avgTicket) ||
                 other.avgTicket == avgTicket));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, date, ordersCount, revenue, avgTicket);
+  int get hashCode => Object.hash(
+    runtimeType,
+    date,
+    ordersCount,
+    walkinsCount,
+    totalCount,
+    revenue,
+    ordersRevenue,
+    walkinsRevenue,
+    avgTicket,
+  );
 
   /// Create a copy of DailyPoint
   /// with the given fields replaced by the non-null parameter values.
@@ -513,9 +598,13 @@ class _$DailyPointImpl implements _DailyPoint {
 abstract class _DailyPoint implements DailyPoint {
   const factory _DailyPoint({
     required final String date,
-    @JsonKey(name: 'orders_count') required final int ordersCount,
-    required final int revenue,
-    @JsonKey(name: 'avg_ticket') final int? avgTicket,
+    final int ordersCount,
+    final int walkinsCount,
+    final int totalCount,
+    final int revenue,
+    final int ordersRevenue,
+    final int walkinsRevenue,
+    final int? avgTicket,
   }) = _$DailyPointImpl;
 
   factory _DailyPoint.fromJson(Map<String, dynamic> json) =
@@ -524,12 +613,18 @@ abstract class _DailyPoint implements DailyPoint {
   @override
   String get date;
   @override
-  @JsonKey(name: 'orders_count')
   int get ordersCount;
+  @override
+  int get walkinsCount;
+  @override
+  int get totalCount;
   @override
   int get revenue;
   @override
-  @JsonKey(name: 'avg_ticket')
+  int get ordersRevenue;
+  @override
+  int get walkinsRevenue;
+  @override
   int? get avgTicket;
 
   /// Create a copy of DailyPoint
@@ -546,9 +641,12 @@ DailyTotals _$DailyTotalsFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$DailyTotals {
-  @JsonKey(name: 'orders_count')
   int get ordersCount => throw _privateConstructorUsedError;
+  int get walkinsCount => throw _privateConstructorUsedError;
+  int get totalCount => throw _privateConstructorUsedError;
   int get revenue => throw _privateConstructorUsedError;
+  int get ordersRevenue => throw _privateConstructorUsedError;
+  int get walkinsRevenue => throw _privateConstructorUsedError;
 
   /// Serializes this DailyTotals to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -567,7 +665,14 @@ abstract class $DailyTotalsCopyWith<$Res> {
     $Res Function(DailyTotals) then,
   ) = _$DailyTotalsCopyWithImpl<$Res, DailyTotals>;
   @useResult
-  $Res call({@JsonKey(name: 'orders_count') int ordersCount, int revenue});
+  $Res call({
+    int ordersCount,
+    int walkinsCount,
+    int totalCount,
+    int revenue,
+    int ordersRevenue,
+    int walkinsRevenue,
+  });
 }
 
 /// @nodoc
@@ -584,16 +689,39 @@ class _$DailyTotalsCopyWithImpl<$Res, $Val extends DailyTotals>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? ordersCount = null, Object? revenue = null}) {
+  $Res call({
+    Object? ordersCount = null,
+    Object? walkinsCount = null,
+    Object? totalCount = null,
+    Object? revenue = null,
+    Object? ordersRevenue = null,
+    Object? walkinsRevenue = null,
+  }) {
     return _then(
       _value.copyWith(
             ordersCount: null == ordersCount
                 ? _value.ordersCount
                 : ordersCount // ignore: cast_nullable_to_non_nullable
                       as int,
+            walkinsCount: null == walkinsCount
+                ? _value.walkinsCount
+                : walkinsCount // ignore: cast_nullable_to_non_nullable
+                      as int,
+            totalCount: null == totalCount
+                ? _value.totalCount
+                : totalCount // ignore: cast_nullable_to_non_nullable
+                      as int,
             revenue: null == revenue
                 ? _value.revenue
                 : revenue // ignore: cast_nullable_to_non_nullable
+                      as int,
+            ordersRevenue: null == ordersRevenue
+                ? _value.ordersRevenue
+                : ordersRevenue // ignore: cast_nullable_to_non_nullable
+                      as int,
+            walkinsRevenue: null == walkinsRevenue
+                ? _value.walkinsRevenue
+                : walkinsRevenue // ignore: cast_nullable_to_non_nullable
                       as int,
           )
           as $Val,
@@ -610,7 +738,14 @@ abstract class _$$DailyTotalsImplCopyWith<$Res>
   ) = __$$DailyTotalsImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({@JsonKey(name: 'orders_count') int ordersCount, int revenue});
+  $Res call({
+    int ordersCount,
+    int walkinsCount,
+    int totalCount,
+    int revenue,
+    int ordersRevenue,
+    int walkinsRevenue,
+  });
 }
 
 /// @nodoc
@@ -626,16 +761,39 @@ class __$$DailyTotalsImplCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? ordersCount = null, Object? revenue = null}) {
+  $Res call({
+    Object? ordersCount = null,
+    Object? walkinsCount = null,
+    Object? totalCount = null,
+    Object? revenue = null,
+    Object? ordersRevenue = null,
+    Object? walkinsRevenue = null,
+  }) {
     return _then(
       _$DailyTotalsImpl(
         ordersCount: null == ordersCount
             ? _value.ordersCount
             : ordersCount // ignore: cast_nullable_to_non_nullable
                   as int,
+        walkinsCount: null == walkinsCount
+            ? _value.walkinsCount
+            : walkinsCount // ignore: cast_nullable_to_non_nullable
+                  as int,
+        totalCount: null == totalCount
+            ? _value.totalCount
+            : totalCount // ignore: cast_nullable_to_non_nullable
+                  as int,
         revenue: null == revenue
             ? _value.revenue
             : revenue // ignore: cast_nullable_to_non_nullable
+                  as int,
+        ordersRevenue: null == ordersRevenue
+            ? _value.ordersRevenue
+            : ordersRevenue // ignore: cast_nullable_to_non_nullable
+                  as int,
+        walkinsRevenue: null == walkinsRevenue
+            ? _value.walkinsRevenue
+            : walkinsRevenue // ignore: cast_nullable_to_non_nullable
                   as int,
       ),
     );
@@ -643,25 +801,43 @@ class __$$DailyTotalsImplCopyWithImpl<$Res>
 }
 
 /// @nodoc
-@JsonSerializable()
+
+@JsonSerializable(fieldRename: FieldRename.snake)
 class _$DailyTotalsImpl implements _DailyTotals {
   const _$DailyTotalsImpl({
-    @JsonKey(name: 'orders_count') required this.ordersCount,
-    required this.revenue,
+    this.ordersCount = 0,
+    this.walkinsCount = 0,
+    this.totalCount = 0,
+    this.revenue = 0,
+    this.ordersRevenue = 0,
+    this.walkinsRevenue = 0,
   });
 
   factory _$DailyTotalsImpl.fromJson(Map<String, dynamic> json) =>
       _$$DailyTotalsImplFromJson(json);
 
   @override
-  @JsonKey(name: 'orders_count')
+  @JsonKey()
   final int ordersCount;
   @override
+  @JsonKey()
+  final int walkinsCount;
+  @override
+  @JsonKey()
+  final int totalCount;
+  @override
+  @JsonKey()
   final int revenue;
+  @override
+  @JsonKey()
+  final int ordersRevenue;
+  @override
+  @JsonKey()
+  final int walkinsRevenue;
 
   @override
   String toString() {
-    return 'DailyTotals(ordersCount: $ordersCount, revenue: $revenue)';
+    return 'DailyTotals(ordersCount: $ordersCount, walkinsCount: $walkinsCount, totalCount: $totalCount, revenue: $revenue, ordersRevenue: $ordersRevenue, walkinsRevenue: $walkinsRevenue)';
   }
 
   @override
@@ -671,12 +847,28 @@ class _$DailyTotalsImpl implements _DailyTotals {
             other is _$DailyTotalsImpl &&
             (identical(other.ordersCount, ordersCount) ||
                 other.ordersCount == ordersCount) &&
-            (identical(other.revenue, revenue) || other.revenue == revenue));
+            (identical(other.walkinsCount, walkinsCount) ||
+                other.walkinsCount == walkinsCount) &&
+            (identical(other.totalCount, totalCount) ||
+                other.totalCount == totalCount) &&
+            (identical(other.revenue, revenue) || other.revenue == revenue) &&
+            (identical(other.ordersRevenue, ordersRevenue) ||
+                other.ordersRevenue == ordersRevenue) &&
+            (identical(other.walkinsRevenue, walkinsRevenue) ||
+                other.walkinsRevenue == walkinsRevenue));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, ordersCount, revenue);
+  int get hashCode => Object.hash(
+    runtimeType,
+    ordersCount,
+    walkinsCount,
+    totalCount,
+    revenue,
+    ordersRevenue,
+    walkinsRevenue,
+  );
 
   /// Create a copy of DailyTotals
   /// with the given fields replaced by the non-null parameter values.
@@ -694,18 +886,29 @@ class _$DailyTotalsImpl implements _DailyTotals {
 
 abstract class _DailyTotals implements DailyTotals {
   const factory _DailyTotals({
-    @JsonKey(name: 'orders_count') required final int ordersCount,
-    required final int revenue,
+    final int ordersCount,
+    final int walkinsCount,
+    final int totalCount,
+    final int revenue,
+    final int ordersRevenue,
+    final int walkinsRevenue,
   }) = _$DailyTotalsImpl;
 
   factory _DailyTotals.fromJson(Map<String, dynamic> json) =
       _$DailyTotalsImpl.fromJson;
 
   @override
-  @JsonKey(name: 'orders_count')
   int get ordersCount;
   @override
+  int get walkinsCount;
+  @override
+  int get totalCount;
+  @override
   int get revenue;
+  @override
+  int get ordersRevenue;
+  @override
+  int get walkinsRevenue;
 
   /// Create a copy of DailyTotals
   /// with the given fields replaced by the non-null parameter values.
@@ -725,7 +928,6 @@ mixin _$MonthlyStats {
   String get currency => throw _privateConstructorUsedError;
   List<MonthlyPoint> get points => throw _privateConstructorUsedError;
   MonthlyTotals get totals => throw _privateConstructorUsedError;
-  @JsonKey(name: 'current_month')
   MonthlyPoint? get currentMonth => throw _privateConstructorUsedError;
   MonthlyComparison? get comparison => throw _privateConstructorUsedError;
 
@@ -751,7 +953,7 @@ abstract class $MonthlyStatsCopyWith<$Res> {
     String currency,
     List<MonthlyPoint> points,
     MonthlyTotals totals,
-    @JsonKey(name: 'current_month') MonthlyPoint? currentMonth,
+    MonthlyPoint? currentMonth,
     MonthlyComparison? comparison,
   });
 
@@ -866,7 +1068,7 @@ abstract class _$$MonthlyStatsImplCopyWith<$Res>
     String currency,
     List<MonthlyPoint> points,
     MonthlyTotals totals,
-    @JsonKey(name: 'current_month') MonthlyPoint? currentMonth,
+    MonthlyPoint? currentMonth,
     MonthlyComparison? comparison,
   });
 
@@ -931,14 +1133,15 @@ class __$$MonthlyStatsImplCopyWithImpl<$Res>
 }
 
 /// @nodoc
-@JsonSerializable()
+
+@JsonSerializable(fieldRename: FieldRename.snake)
 class _$MonthlyStatsImpl implements _MonthlyStats {
   const _$MonthlyStatsImpl({
     required this.year,
     required this.currency,
     required final List<MonthlyPoint> points,
     required this.totals,
-    @JsonKey(name: 'current_month') this.currentMonth,
+    this.currentMonth,
     this.comparison,
   }) : _points = points;
 
@@ -960,7 +1163,6 @@ class _$MonthlyStatsImpl implements _MonthlyStats {
   @override
   final MonthlyTotals totals;
   @override
-  @JsonKey(name: 'current_month')
   final MonthlyPoint? currentMonth;
   @override
   final MonthlyComparison? comparison;
@@ -1018,7 +1220,7 @@ abstract class _MonthlyStats implements MonthlyStats {
     required final String currency,
     required final List<MonthlyPoint> points,
     required final MonthlyTotals totals,
-    @JsonKey(name: 'current_month') final MonthlyPoint? currentMonth,
+    final MonthlyPoint? currentMonth,
     final MonthlyComparison? comparison,
   }) = _$MonthlyStatsImpl;
 
@@ -1034,7 +1236,6 @@ abstract class _MonthlyStats implements MonthlyStats {
   @override
   MonthlyTotals get totals;
   @override
-  @JsonKey(name: 'current_month')
   MonthlyPoint? get currentMonth;
   @override
   MonthlyComparison? get comparison;
@@ -1054,9 +1255,12 @@ MonthlyPoint _$MonthlyPointFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$MonthlyPoint {
   String get month => throw _privateConstructorUsedError;
-  @JsonKey(name: 'orders_count')
   int get ordersCount => throw _privateConstructorUsedError;
+  int get walkinsCount => throw _privateConstructorUsedError;
+  int get totalCount => throw _privateConstructorUsedError;
   int get revenue => throw _privateConstructorUsedError;
+  int get ordersRevenue => throw _privateConstructorUsedError;
+  int get walkinsRevenue => throw _privateConstructorUsedError;
   int? get shops => throw _privateConstructorUsedError;
 
   /// Serializes this MonthlyPoint to a JSON map.
@@ -1078,8 +1282,12 @@ abstract class $MonthlyPointCopyWith<$Res> {
   @useResult
   $Res call({
     String month,
-    @JsonKey(name: 'orders_count') int ordersCount,
+    int ordersCount,
+    int walkinsCount,
+    int totalCount,
     int revenue,
+    int ordersRevenue,
+    int walkinsRevenue,
     int? shops,
   });
 }
@@ -1101,7 +1309,11 @@ class _$MonthlyPointCopyWithImpl<$Res, $Val extends MonthlyPoint>
   $Res call({
     Object? month = null,
     Object? ordersCount = null,
+    Object? walkinsCount = null,
+    Object? totalCount = null,
     Object? revenue = null,
+    Object? ordersRevenue = null,
+    Object? walkinsRevenue = null,
     Object? shops = freezed,
   }) {
     return _then(
@@ -1114,9 +1326,25 @@ class _$MonthlyPointCopyWithImpl<$Res, $Val extends MonthlyPoint>
                 ? _value.ordersCount
                 : ordersCount // ignore: cast_nullable_to_non_nullable
                       as int,
+            walkinsCount: null == walkinsCount
+                ? _value.walkinsCount
+                : walkinsCount // ignore: cast_nullable_to_non_nullable
+                      as int,
+            totalCount: null == totalCount
+                ? _value.totalCount
+                : totalCount // ignore: cast_nullable_to_non_nullable
+                      as int,
             revenue: null == revenue
                 ? _value.revenue
                 : revenue // ignore: cast_nullable_to_non_nullable
+                      as int,
+            ordersRevenue: null == ordersRevenue
+                ? _value.ordersRevenue
+                : ordersRevenue // ignore: cast_nullable_to_non_nullable
+                      as int,
+            walkinsRevenue: null == walkinsRevenue
+                ? _value.walkinsRevenue
+                : walkinsRevenue // ignore: cast_nullable_to_non_nullable
                       as int,
             shops: freezed == shops
                 ? _value.shops
@@ -1139,8 +1367,12 @@ abstract class _$$MonthlyPointImplCopyWith<$Res>
   @useResult
   $Res call({
     String month,
-    @JsonKey(name: 'orders_count') int ordersCount,
+    int ordersCount,
+    int walkinsCount,
+    int totalCount,
     int revenue,
+    int ordersRevenue,
+    int walkinsRevenue,
     int? shops,
   });
 }
@@ -1161,7 +1393,11 @@ class __$$MonthlyPointImplCopyWithImpl<$Res>
   $Res call({
     Object? month = null,
     Object? ordersCount = null,
+    Object? walkinsCount = null,
+    Object? totalCount = null,
     Object? revenue = null,
+    Object? ordersRevenue = null,
+    Object? walkinsRevenue = null,
     Object? shops = freezed,
   }) {
     return _then(
@@ -1174,9 +1410,25 @@ class __$$MonthlyPointImplCopyWithImpl<$Res>
             ? _value.ordersCount
             : ordersCount // ignore: cast_nullable_to_non_nullable
                   as int,
+        walkinsCount: null == walkinsCount
+            ? _value.walkinsCount
+            : walkinsCount // ignore: cast_nullable_to_non_nullable
+                  as int,
+        totalCount: null == totalCount
+            ? _value.totalCount
+            : totalCount // ignore: cast_nullable_to_non_nullable
+                  as int,
         revenue: null == revenue
             ? _value.revenue
             : revenue // ignore: cast_nullable_to_non_nullable
+                  as int,
+        ordersRevenue: null == ordersRevenue
+            ? _value.ordersRevenue
+            : ordersRevenue // ignore: cast_nullable_to_non_nullable
+                  as int,
+        walkinsRevenue: null == walkinsRevenue
+            ? _value.walkinsRevenue
+            : walkinsRevenue // ignore: cast_nullable_to_non_nullable
                   as int,
         shops: freezed == shops
             ? _value.shops
@@ -1188,12 +1440,17 @@ class __$$MonthlyPointImplCopyWithImpl<$Res>
 }
 
 /// @nodoc
-@JsonSerializable()
+
+@JsonSerializable(fieldRename: FieldRename.snake)
 class _$MonthlyPointImpl implements _MonthlyPoint {
   const _$MonthlyPointImpl({
     required this.month,
-    @JsonKey(name: 'orders_count') required this.ordersCount,
-    required this.revenue,
+    this.ordersCount = 0,
+    this.walkinsCount = 0,
+    this.totalCount = 0,
+    this.revenue = 0,
+    this.ordersRevenue = 0,
+    this.walkinsRevenue = 0,
     this.shops,
   });
 
@@ -1203,16 +1460,29 @@ class _$MonthlyPointImpl implements _MonthlyPoint {
   @override
   final String month;
   @override
-  @JsonKey(name: 'orders_count')
+  @JsonKey()
   final int ordersCount;
   @override
+  @JsonKey()
+  final int walkinsCount;
+  @override
+  @JsonKey()
+  final int totalCount;
+  @override
+  @JsonKey()
   final int revenue;
+  @override
+  @JsonKey()
+  final int ordersRevenue;
+  @override
+  @JsonKey()
+  final int walkinsRevenue;
   @override
   final int? shops;
 
   @override
   String toString() {
-    return 'MonthlyPoint(month: $month, ordersCount: $ordersCount, revenue: $revenue, shops: $shops)';
+    return 'MonthlyPoint(month: $month, ordersCount: $ordersCount, walkinsCount: $walkinsCount, totalCount: $totalCount, revenue: $revenue, ordersRevenue: $ordersRevenue, walkinsRevenue: $walkinsRevenue, shops: $shops)';
   }
 
   @override
@@ -1223,14 +1493,31 @@ class _$MonthlyPointImpl implements _MonthlyPoint {
             (identical(other.month, month) || other.month == month) &&
             (identical(other.ordersCount, ordersCount) ||
                 other.ordersCount == ordersCount) &&
+            (identical(other.walkinsCount, walkinsCount) ||
+                other.walkinsCount == walkinsCount) &&
+            (identical(other.totalCount, totalCount) ||
+                other.totalCount == totalCount) &&
             (identical(other.revenue, revenue) || other.revenue == revenue) &&
+            (identical(other.ordersRevenue, ordersRevenue) ||
+                other.ordersRevenue == ordersRevenue) &&
+            (identical(other.walkinsRevenue, walkinsRevenue) ||
+                other.walkinsRevenue == walkinsRevenue) &&
             (identical(other.shops, shops) || other.shops == shops));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, month, ordersCount, revenue, shops);
+  int get hashCode => Object.hash(
+    runtimeType,
+    month,
+    ordersCount,
+    walkinsCount,
+    totalCount,
+    revenue,
+    ordersRevenue,
+    walkinsRevenue,
+    shops,
+  );
 
   /// Create a copy of MonthlyPoint
   /// with the given fields replaced by the non-null parameter values.
@@ -1249,8 +1536,12 @@ class _$MonthlyPointImpl implements _MonthlyPoint {
 abstract class _MonthlyPoint implements MonthlyPoint {
   const factory _MonthlyPoint({
     required final String month,
-    @JsonKey(name: 'orders_count') required final int ordersCount,
-    required final int revenue,
+    final int ordersCount,
+    final int walkinsCount,
+    final int totalCount,
+    final int revenue,
+    final int ordersRevenue,
+    final int walkinsRevenue,
     final int? shops,
   }) = _$MonthlyPointImpl;
 
@@ -1260,10 +1551,17 @@ abstract class _MonthlyPoint implements MonthlyPoint {
   @override
   String get month;
   @override
-  @JsonKey(name: 'orders_count')
   int get ordersCount;
   @override
+  int get walkinsCount;
+  @override
+  int get totalCount;
+  @override
   int get revenue;
+  @override
+  int get ordersRevenue;
+  @override
+  int get walkinsRevenue;
   @override
   int? get shops;
 
@@ -1281,9 +1579,12 @@ MonthlyTotals _$MonthlyTotalsFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$MonthlyTotals {
-  @JsonKey(name: 'orders_count')
   int get ordersCount => throw _privateConstructorUsedError;
+  int get walkinsCount => throw _privateConstructorUsedError;
+  int get totalCount => throw _privateConstructorUsedError;
   int get revenue => throw _privateConstructorUsedError;
+  int get ordersRevenue => throw _privateConstructorUsedError;
+  int get walkinsRevenue => throw _privateConstructorUsedError;
   int? get shops => throw _privateConstructorUsedError;
 
   /// Serializes this MonthlyTotals to a JSON map.
@@ -1304,8 +1605,12 @@ abstract class $MonthlyTotalsCopyWith<$Res> {
   ) = _$MonthlyTotalsCopyWithImpl<$Res, MonthlyTotals>;
   @useResult
   $Res call({
-    @JsonKey(name: 'orders_count') int ordersCount,
+    int ordersCount,
+    int walkinsCount,
+    int totalCount,
     int revenue,
+    int ordersRevenue,
+    int walkinsRevenue,
     int? shops,
   });
 }
@@ -1326,7 +1631,11 @@ class _$MonthlyTotalsCopyWithImpl<$Res, $Val extends MonthlyTotals>
   @override
   $Res call({
     Object? ordersCount = null,
+    Object? walkinsCount = null,
+    Object? totalCount = null,
     Object? revenue = null,
+    Object? ordersRevenue = null,
+    Object? walkinsRevenue = null,
     Object? shops = freezed,
   }) {
     return _then(
@@ -1335,9 +1644,25 @@ class _$MonthlyTotalsCopyWithImpl<$Res, $Val extends MonthlyTotals>
                 ? _value.ordersCount
                 : ordersCount // ignore: cast_nullable_to_non_nullable
                       as int,
+            walkinsCount: null == walkinsCount
+                ? _value.walkinsCount
+                : walkinsCount // ignore: cast_nullable_to_non_nullable
+                      as int,
+            totalCount: null == totalCount
+                ? _value.totalCount
+                : totalCount // ignore: cast_nullable_to_non_nullable
+                      as int,
             revenue: null == revenue
                 ? _value.revenue
                 : revenue // ignore: cast_nullable_to_non_nullable
+                      as int,
+            ordersRevenue: null == ordersRevenue
+                ? _value.ordersRevenue
+                : ordersRevenue // ignore: cast_nullable_to_non_nullable
+                      as int,
+            walkinsRevenue: null == walkinsRevenue
+                ? _value.walkinsRevenue
+                : walkinsRevenue // ignore: cast_nullable_to_non_nullable
                       as int,
             shops: freezed == shops
                 ? _value.shops
@@ -1359,8 +1684,12 @@ abstract class _$$MonthlyTotalsImplCopyWith<$Res>
   @override
   @useResult
   $Res call({
-    @JsonKey(name: 'orders_count') int ordersCount,
+    int ordersCount,
+    int walkinsCount,
+    int totalCount,
     int revenue,
+    int ordersRevenue,
+    int walkinsRevenue,
     int? shops,
   });
 }
@@ -1380,7 +1709,11 @@ class __$$MonthlyTotalsImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? ordersCount = null,
+    Object? walkinsCount = null,
+    Object? totalCount = null,
     Object? revenue = null,
+    Object? ordersRevenue = null,
+    Object? walkinsRevenue = null,
     Object? shops = freezed,
   }) {
     return _then(
@@ -1389,9 +1722,25 @@ class __$$MonthlyTotalsImplCopyWithImpl<$Res>
             ? _value.ordersCount
             : ordersCount // ignore: cast_nullable_to_non_nullable
                   as int,
+        walkinsCount: null == walkinsCount
+            ? _value.walkinsCount
+            : walkinsCount // ignore: cast_nullable_to_non_nullable
+                  as int,
+        totalCount: null == totalCount
+            ? _value.totalCount
+            : totalCount // ignore: cast_nullable_to_non_nullable
+                  as int,
         revenue: null == revenue
             ? _value.revenue
             : revenue // ignore: cast_nullable_to_non_nullable
+                  as int,
+        ordersRevenue: null == ordersRevenue
+            ? _value.ordersRevenue
+            : ordersRevenue // ignore: cast_nullable_to_non_nullable
+                  as int,
+        walkinsRevenue: null == walkinsRevenue
+            ? _value.walkinsRevenue
+            : walkinsRevenue // ignore: cast_nullable_to_non_nullable
                   as int,
         shops: freezed == shops
             ? _value.shops
@@ -1403,11 +1752,16 @@ class __$$MonthlyTotalsImplCopyWithImpl<$Res>
 }
 
 /// @nodoc
-@JsonSerializable()
+
+@JsonSerializable(fieldRename: FieldRename.snake)
 class _$MonthlyTotalsImpl implements _MonthlyTotals {
   const _$MonthlyTotalsImpl({
-    @JsonKey(name: 'orders_count') required this.ordersCount,
-    required this.revenue,
+    this.ordersCount = 0,
+    this.walkinsCount = 0,
+    this.totalCount = 0,
+    this.revenue = 0,
+    this.ordersRevenue = 0,
+    this.walkinsRevenue = 0,
     this.shops,
   });
 
@@ -1415,16 +1769,29 @@ class _$MonthlyTotalsImpl implements _MonthlyTotals {
       _$$MonthlyTotalsImplFromJson(json);
 
   @override
-  @JsonKey(name: 'orders_count')
+  @JsonKey()
   final int ordersCount;
   @override
+  @JsonKey()
+  final int walkinsCount;
+  @override
+  @JsonKey()
+  final int totalCount;
+  @override
+  @JsonKey()
   final int revenue;
+  @override
+  @JsonKey()
+  final int ordersRevenue;
+  @override
+  @JsonKey()
+  final int walkinsRevenue;
   @override
   final int? shops;
 
   @override
   String toString() {
-    return 'MonthlyTotals(ordersCount: $ordersCount, revenue: $revenue, shops: $shops)';
+    return 'MonthlyTotals(ordersCount: $ordersCount, walkinsCount: $walkinsCount, totalCount: $totalCount, revenue: $revenue, ordersRevenue: $ordersRevenue, walkinsRevenue: $walkinsRevenue, shops: $shops)';
   }
 
   @override
@@ -1434,13 +1801,30 @@ class _$MonthlyTotalsImpl implements _MonthlyTotals {
             other is _$MonthlyTotalsImpl &&
             (identical(other.ordersCount, ordersCount) ||
                 other.ordersCount == ordersCount) &&
+            (identical(other.walkinsCount, walkinsCount) ||
+                other.walkinsCount == walkinsCount) &&
+            (identical(other.totalCount, totalCount) ||
+                other.totalCount == totalCount) &&
             (identical(other.revenue, revenue) || other.revenue == revenue) &&
+            (identical(other.ordersRevenue, ordersRevenue) ||
+                other.ordersRevenue == ordersRevenue) &&
+            (identical(other.walkinsRevenue, walkinsRevenue) ||
+                other.walkinsRevenue == walkinsRevenue) &&
             (identical(other.shops, shops) || other.shops == shops));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, ordersCount, revenue, shops);
+  int get hashCode => Object.hash(
+    runtimeType,
+    ordersCount,
+    walkinsCount,
+    totalCount,
+    revenue,
+    ordersRevenue,
+    walkinsRevenue,
+    shops,
+  );
 
   /// Create a copy of MonthlyTotals
   /// with the given fields replaced by the non-null parameter values.
@@ -1458,8 +1842,12 @@ class _$MonthlyTotalsImpl implements _MonthlyTotals {
 
 abstract class _MonthlyTotals implements MonthlyTotals {
   const factory _MonthlyTotals({
-    @JsonKey(name: 'orders_count') required final int ordersCount,
-    required final int revenue,
+    final int ordersCount,
+    final int walkinsCount,
+    final int totalCount,
+    final int revenue,
+    final int ordersRevenue,
+    final int walkinsRevenue,
     final int? shops,
   }) = _$MonthlyTotalsImpl;
 
@@ -1467,10 +1855,17 @@ abstract class _MonthlyTotals implements MonthlyTotals {
       _$MonthlyTotalsImpl.fromJson;
 
   @override
-  @JsonKey(name: 'orders_count')
   int get ordersCount;
   @override
+  int get walkinsCount;
+  @override
+  int get totalCount;
+  @override
   int get revenue;
+  @override
+  int get ordersRevenue;
+  @override
+  int get walkinsRevenue;
   @override
   int? get shops;
 
@@ -1488,11 +1883,8 @@ MonthlyComparison _$MonthlyComparisonFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$MonthlyComparison {
-  @JsonKey(name: 'previous_year')
   int get previousYear => throw _privateConstructorUsedError;
-  @JsonKey(name: 'previous_revenue')
   int get previousRevenue => throw _privateConstructorUsedError;
-  @JsonKey(name: 'change_percent')
   double? get changePercent => throw _privateConstructorUsedError;
 
   /// Serializes this MonthlyComparison to a JSON map.
@@ -1512,11 +1904,7 @@ abstract class $MonthlyComparisonCopyWith<$Res> {
     $Res Function(MonthlyComparison) then,
   ) = _$MonthlyComparisonCopyWithImpl<$Res, MonthlyComparison>;
   @useResult
-  $Res call({
-    @JsonKey(name: 'previous_year') int previousYear,
-    @JsonKey(name: 'previous_revenue') int previousRevenue,
-    @JsonKey(name: 'change_percent') double? changePercent,
-  });
+  $Res call({int previousYear, int previousRevenue, double? changePercent});
 }
 
 /// @nodoc
@@ -1567,11 +1955,7 @@ abstract class _$$MonthlyComparisonImplCopyWith<$Res>
   ) = __$$MonthlyComparisonImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({
-    @JsonKey(name: 'previous_year') int previousYear,
-    @JsonKey(name: 'previous_revenue') int previousRevenue,
-    @JsonKey(name: 'change_percent') double? changePercent,
-  });
+  $Res call({int previousYear, int previousRevenue, double? changePercent});
 }
 
 /// @nodoc
@@ -1612,25 +1996,23 @@ class __$$MonthlyComparisonImplCopyWithImpl<$Res>
 }
 
 /// @nodoc
-@JsonSerializable()
+
+@JsonSerializable(fieldRename: FieldRename.snake)
 class _$MonthlyComparisonImpl implements _MonthlyComparison {
   const _$MonthlyComparisonImpl({
-    @JsonKey(name: 'previous_year') required this.previousYear,
-    @JsonKey(name: 'previous_revenue') required this.previousRevenue,
-    @JsonKey(name: 'change_percent') this.changePercent,
+    required this.previousYear,
+    required this.previousRevenue,
+    this.changePercent,
   });
 
   factory _$MonthlyComparisonImpl.fromJson(Map<String, dynamic> json) =>
       _$$MonthlyComparisonImplFromJson(json);
 
   @override
-  @JsonKey(name: 'previous_year')
   final int previousYear;
   @override
-  @JsonKey(name: 'previous_revenue')
   final int previousRevenue;
   @override
-  @JsonKey(name: 'change_percent')
   final double? changePercent;
 
   @override
@@ -1675,22 +2057,19 @@ class _$MonthlyComparisonImpl implements _MonthlyComparison {
 
 abstract class _MonthlyComparison implements MonthlyComparison {
   const factory _MonthlyComparison({
-    @JsonKey(name: 'previous_year') required final int previousYear,
-    @JsonKey(name: 'previous_revenue') required final int previousRevenue,
-    @JsonKey(name: 'change_percent') final double? changePercent,
+    required final int previousYear,
+    required final int previousRevenue,
+    final double? changePercent,
   }) = _$MonthlyComparisonImpl;
 
   factory _MonthlyComparison.fromJson(Map<String, dynamic> json) =
       _$MonthlyComparisonImpl.fromJson;
 
   @override
-  @JsonKey(name: 'previous_year')
   int get previousYear;
   @override
-  @JsonKey(name: 'previous_revenue')
   int get previousRevenue;
   @override
-  @JsonKey(name: 'change_percent')
   double? get changePercent;
 
   /// Create a copy of MonthlyComparison
