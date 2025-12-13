@@ -44,6 +44,12 @@ class ShopService {
 
   Map<String, dynamic> _normalizeShopJson(Map<String, dynamic> json) {
     final normalized = Map<String, dynamic>.from(json);
+    
+    // Handle null address
+    if (normalized.containsKey('address') && normalized['address'] == null) {
+      normalized['address'] = 'Manzil ko\'rsatilmagan'; // Default value
+    }
+    
     if (normalized.containsKey('location_lat')) {
       normalized['location_lat'] = _toDouble(normalized['location_lat']);
     }
@@ -52,8 +58,9 @@ class ShopService {
     }
 
     // Normalize subscription_plan.price (backend may send "50000.00" as String)
+    // subscription_plan null bo'lishi mumkin
     final plan = normalized['subscription_plan'];
-    if (plan is Map) {
+    if (plan != null && plan is Map) {
       final planMap = Map<String, dynamic>.from(plan);
       if (planMap.containsKey('price')) {
         planMap['price'] = _toInt(planMap['price']);
@@ -63,6 +70,9 @@ class ShopService {
         planMap['price'] = _toInt(planMap['price_monthly']);
       }
       normalized['subscription_plan'] = planMap;
+    } else {
+      // subscription_plan null bo'lsa, uni o'chirish yoki null qoldirish
+      normalized['subscription_plan'] = null;
     }
 
     // Normalize shop services prices

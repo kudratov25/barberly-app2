@@ -168,7 +168,7 @@ class _ShopDetailScreenState extends ConsumerState<ShopDetailScreen> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              shop.address,
+                              shop.address ?? 'Manzil ko\'rsatilmagan',
                               style: const TextStyle(
                                 fontSize: 15,
                                 color: Color(0xFF212121),

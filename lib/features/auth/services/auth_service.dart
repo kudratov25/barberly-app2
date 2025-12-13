@@ -28,6 +28,7 @@ class AuthService {
           'email': email,
           'password': password,
           'password_confirmation': passwordConfirmation,
+          'app_type': 'client_side', // Client side app uchun
         },
       );
 

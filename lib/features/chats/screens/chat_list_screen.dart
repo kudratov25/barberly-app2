@@ -95,7 +95,10 @@ class _ChatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final otherUser = chat.users.isNotEmpty ? chat.users.first : null;
-    final hasUnread = chat.latestMessage?.isRead == false;
+    // Unread count: backend'dan kelgan yoki latest_message is_read dan hisoblash
+    final unreadCount = chat.unreadCount ?? 
+        (chat.latestMessage?.isRead == false ? 1 : 0);
+    final hasUnread = unreadCount > 0;
 
     DateTime? _parseCreatedAt(String? value) {
       if (value == null || value.isEmpty) return null;
@@ -115,24 +118,59 @@ class _ChatCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              // Avatar
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF2196F3),
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    otherUser?.name[0].toUpperCase() ?? 'U',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+              // Avatar with unread badge
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2196F3),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        otherUser?.name[0].toUpperCase() ?? 'U',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                  // Unread count badge on avatar
+                  if (hasUnread)
+                    Positioned(
+                      right: -4,
+                      top: -4,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 18,
+                          minHeight: 18,
+                        ),
+                        child: Center(
+                          child: Text(
+                            unreadCount > 99 ? '99+' : '$unreadCount',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
               const SizedBox(width: 12),
               // Chat info
@@ -143,30 +181,37 @@ class _ChatCard extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          otherUser?.name ?? 'Chat',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight:
-                                hasUnread ? FontWeight.bold : FontWeight.w600,
-                            color: const Color(0xFF212121),
+                        Expanded(
+                          child: Text(
+                            otherUser?.name ?? 'Chat',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight:
+                                  hasUnread ? FontWeight.bold : FontWeight.w600,
+                              color: const Color(0xFF212121),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         if (_parseCreatedAt(chat.latestMessage?.createdAt) !=
                             null)
-                          Text(
-                            DateFormat('HH:mm').format(
-                              _parseCreatedAt(
-                                chat.latestMessage?.createdAt,
-                              )!,
-                            ),
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: hasUnread
-                                  ? const Color(0xFF2196F3)
-                                  : const Color(0xFF757575),
-                              fontWeight:
-                                  hasUnread ? FontWeight.w600 : FontWeight.normal,
+                          Padding(
+                            padding: const EdgeInsets.only(left: 8),
+                            child: Text(
+                              DateFormat('HH:mm').format(
+                                _parseCreatedAt(
+                                  chat.latestMessage?.createdAt,
+                                )!,
+                              ),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: hasUnread
+                                    ? const Color(0xFF2196F3)
+                                    : const Color(0xFF757575),
+                                fontWeight:
+                                    hasUnread ? FontWeight.w600 : FontWeight.normal,
+                              ),
                             ),
                           ),
                       ],
@@ -189,20 +234,21 @@ class _ChatCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        // Unread count badge (alternative to avatar badge)
                         if (hasUnread)
                           Container(
                             margin: const EdgeInsets.only(left: 8),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: unreadCount > 9 ? 8 : 8,
                               vertical: 4,
                             ),
                             decoration: const BoxDecoration(
                               color: Color(0xFF2196F3),
-                              shape: BoxShape.circle,
+                              borderRadius: BorderRadius.all(Radius.circular(12)),
                             ),
-                            child: const Text(
-                              '1',
-                              style: TextStyle(
+                            child: Text(
+                              unreadCount > 99 ? '99+' : '$unreadCount',
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,

@@ -419,7 +419,8 @@ Shop _$ShopFromJson(Map<String, dynamic> json) {
 mixin _$Shop {
   int get id => throw _privateConstructorUsedError;
   String get name => throw _privateConstructorUsedError;
-  String get address => throw _privateConstructorUsedError;
+  String? get address =>
+      throw _privateConstructorUsedError; // Null bo'lishi mumkin
   String get phone => throw _privateConstructorUsedError;
   String get status => throw _privateConstructorUsedError;
   @JsonKey(name: 'location_lat')
@@ -449,7 +450,7 @@ abstract class $ShopCopyWith<$Res> {
   $Res call({
     int id,
     String name,
-    String address,
+    String? address,
     String phone,
     String status,
     @JsonKey(name: 'location_lat') double? locationLat,
@@ -481,7 +482,7 @@ class _$ShopCopyWithImpl<$Res, $Val extends Shop>
   $Res call({
     Object? id = null,
     Object? name = null,
-    Object? address = null,
+    Object? address = freezed,
     Object? phone = null,
     Object? status = null,
     Object? locationLat = freezed,
@@ -501,10 +502,10 @@ class _$ShopCopyWithImpl<$Res, $Val extends Shop>
                 ? _value.name
                 : name // ignore: cast_nullable_to_non_nullable
                       as String,
-            address: null == address
+            address: freezed == address
                 ? _value.address
                 : address // ignore: cast_nullable_to_non_nullable
-                      as String,
+                      as String?,
             phone: null == phone
                 ? _value.phone
                 : phone // ignore: cast_nullable_to_non_nullable
@@ -582,7 +583,7 @@ abstract class _$$ShopImplCopyWith<$Res> implements $ShopCopyWith<$Res> {
   $Res call({
     int id,
     String name,
-    String address,
+    String? address,
     String phone,
     String status,
     @JsonKey(name: 'location_lat') double? locationLat,
@@ -613,7 +614,7 @@ class __$$ShopImplCopyWithImpl<$Res>
   $Res call({
     Object? id = null,
     Object? name = null,
-    Object? address = null,
+    Object? address = freezed,
     Object? phone = null,
     Object? status = null,
     Object? locationLat = freezed,
@@ -633,10 +634,10 @@ class __$$ShopImplCopyWithImpl<$Res>
             ? _value.name
             : name // ignore: cast_nullable_to_non_nullable
                   as String,
-        address: null == address
+        address: freezed == address
             ? _value.address
             : address // ignore: cast_nullable_to_non_nullable
-                  as String,
+                  as String?,
         phone: null == phone
             ? _value.phone
             : phone // ignore: cast_nullable_to_non_nullable
@@ -680,7 +681,7 @@ class _$ShopImpl implements _Shop {
   const _$ShopImpl({
     required this.id,
     required this.name,
-    required this.address,
+    this.address,
     required this.phone,
     required this.status,
     @JsonKey(name: 'location_lat') this.locationLat,
@@ -700,7 +701,8 @@ class _$ShopImpl implements _Shop {
   @override
   final String name;
   @override
-  final String address;
+  final String? address;
+  // Null bo'lishi mumkin
   @override
   final String phone;
   @override
@@ -797,7 +799,7 @@ abstract class _Shop implements Shop {
   const factory _Shop({
     required final int id,
     required final String name,
-    required final String address,
+    final String? address,
     required final String phone,
     required final String status,
     @JsonKey(name: 'location_lat') final double? locationLat,
@@ -816,7 +818,7 @@ abstract class _Shop implements Shop {
   @override
   String get name;
   @override
-  String get address;
+  String? get address; // Null bo'lishi mumkin
   @override
   String get phone;
   @override

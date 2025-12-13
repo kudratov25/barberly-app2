@@ -13,6 +13,7 @@ _$ChatImpl _$$ChatImplFromJson(Map<String, dynamic> json) => _$ChatImpl(
   latestMessage: json['latest_message'] == null
       ? null
       : ChatMessage.fromJson(json['latest_message'] as Map<String, dynamic>),
+  unreadCount: (json['unread_count'] as num?)?.toInt(),
   users: (json['users'] as List<dynamic>)
       .map((e) => ChatUser.fromJson(e as Map<String, dynamic>))
       .toList(),
@@ -24,6 +25,7 @@ Map<String, dynamic> _$$ChatImplToJson(_$ChatImpl instance) =>
       'type': instance.type,
       'created_at': instance.createdAt,
       'latest_message': instance.latestMessage,
+      'unread_count': instance.unreadCount,
       'users': instance.users,
     };
 

@@ -27,6 +27,8 @@ mixin _$Chat {
   String get createdAt => throw _privateConstructorUsedError;
   @JsonKey(name: 'latest_message')
   ChatMessage? get latestMessage => throw _privateConstructorUsedError;
+  @JsonKey(name: 'unread_count')
+  int? get unreadCount => throw _privateConstructorUsedError;
   List<ChatUser> get users => throw _privateConstructorUsedError;
 
   /// Serializes this Chat to a JSON map.
@@ -48,6 +50,7 @@ abstract class $ChatCopyWith<$Res> {
     String type,
     @JsonKey(name: 'created_at') String createdAt,
     @JsonKey(name: 'latest_message') ChatMessage? latestMessage,
+    @JsonKey(name: 'unread_count') int? unreadCount,
     List<ChatUser> users,
   });
 
@@ -73,6 +76,7 @@ class _$ChatCopyWithImpl<$Res, $Val extends Chat>
     Object? type = null,
     Object? createdAt = null,
     Object? latestMessage = freezed,
+    Object? unreadCount = freezed,
     Object? users = null,
   }) {
     return _then(
@@ -93,6 +97,10 @@ class _$ChatCopyWithImpl<$Res, $Val extends Chat>
                 ? _value.latestMessage
                 : latestMessage // ignore: cast_nullable_to_non_nullable
                       as ChatMessage?,
+            unreadCount: freezed == unreadCount
+                ? _value.unreadCount
+                : unreadCount // ignore: cast_nullable_to_non_nullable
+                      as int?,
             users: null == users
                 ? _value.users
                 : users // ignore: cast_nullable_to_non_nullable
@@ -130,6 +138,7 @@ abstract class _$$ChatImplCopyWith<$Res> implements $ChatCopyWith<$Res> {
     String type,
     @JsonKey(name: 'created_at') String createdAt,
     @JsonKey(name: 'latest_message') ChatMessage? latestMessage,
+    @JsonKey(name: 'unread_count') int? unreadCount,
     List<ChatUser> users,
   });
 
@@ -153,6 +162,7 @@ class __$$ChatImplCopyWithImpl<$Res>
     Object? type = null,
     Object? createdAt = null,
     Object? latestMessage = freezed,
+    Object? unreadCount = freezed,
     Object? users = null,
   }) {
     return _then(
@@ -173,6 +183,10 @@ class __$$ChatImplCopyWithImpl<$Res>
             ? _value.latestMessage
             : latestMessage // ignore: cast_nullable_to_non_nullable
                   as ChatMessage?,
+        unreadCount: freezed == unreadCount
+            ? _value.unreadCount
+            : unreadCount // ignore: cast_nullable_to_non_nullable
+                  as int?,
         users: null == users
             ? _value._users
             : users // ignore: cast_nullable_to_non_nullable
@@ -190,6 +204,7 @@ class _$ChatImpl implements _Chat {
     required this.type,
     @JsonKey(name: 'created_at') required this.createdAt,
     @JsonKey(name: 'latest_message') this.latestMessage,
+    @JsonKey(name: 'unread_count') this.unreadCount,
     required final List<ChatUser> users,
   }) : _users = users;
 
@@ -206,6 +221,9 @@ class _$ChatImpl implements _Chat {
   @override
   @JsonKey(name: 'latest_message')
   final ChatMessage? latestMessage;
+  @override
+  @JsonKey(name: 'unread_count')
+  final int? unreadCount;
   final List<ChatUser> _users;
   @override
   List<ChatUser> get users {
@@ -216,7 +234,7 @@ class _$ChatImpl implements _Chat {
 
   @override
   String toString() {
-    return 'Chat(id: $id, type: $type, createdAt: $createdAt, latestMessage: $latestMessage, users: $users)';
+    return 'Chat(id: $id, type: $type, createdAt: $createdAt, latestMessage: $latestMessage, unreadCount: $unreadCount, users: $users)';
   }
 
   @override
@@ -230,6 +248,8 @@ class _$ChatImpl implements _Chat {
                 other.createdAt == createdAt) &&
             (identical(other.latestMessage, latestMessage) ||
                 other.latestMessage == latestMessage) &&
+            (identical(other.unreadCount, unreadCount) ||
+                other.unreadCount == unreadCount) &&
             const DeepCollectionEquality().equals(other._users, _users));
   }
 
@@ -241,6 +261,7 @@ class _$ChatImpl implements _Chat {
     type,
     createdAt,
     latestMessage,
+    unreadCount,
     const DeepCollectionEquality().hash(_users),
   );
 
@@ -264,6 +285,7 @@ abstract class _Chat implements Chat {
     required final String type,
     @JsonKey(name: 'created_at') required final String createdAt,
     @JsonKey(name: 'latest_message') final ChatMessage? latestMessage,
+    @JsonKey(name: 'unread_count') final int? unreadCount,
     required final List<ChatUser> users,
   }) = _$ChatImpl;
 
@@ -279,6 +301,9 @@ abstract class _Chat implements Chat {
   @override
   @JsonKey(name: 'latest_message')
   ChatMessage? get latestMessage;
+  @override
+  @JsonKey(name: 'unread_count')
+  int? get unreadCount;
   @override
   List<ChatUser> get users;
 

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile/api/client.dart';
 import 'package:mobile/features/auth/services/auth_service.dart';
 import 'package:mobile/features/barbers/services/barber_service.dart';
+import 'package:mobile/features/barbers/services/available_slots_service.dart';
 import 'package:mobile/features/chats/services/chat_service.dart';
 import 'package:mobile/features/orders/services/order_service.dart';
 import 'package:mobile/features/ratings/services/rating_service.dart';
@@ -26,6 +27,11 @@ final shopServiceProvider = Provider<ShopService>((ref) {
 /// Barber service provider
 final barberServiceProvider = Provider<BarberService>((ref) {
   return BarberService(ref.watch(apiClientProvider));
+});
+
+/// Available slots service provider
+final availableSlotsServiceProvider = Provider<AvailableSlotsService>((ref) {
+  return AvailableSlotsService(ref.watch(apiClientProvider));
 });
 
 /// Service service provider

@@ -36,7 +36,7 @@ Map<String, dynamic> _$$SubscriptionPlanImplToJson(
 _$ShopImpl _$$ShopImplFromJson(Map<String, dynamic> json) => _$ShopImpl(
   id: (json['id'] as num).toInt(),
   name: json['name'] as String,
-  address: json['address'] as String,
+  address: json['address'] as String?,
   phone: json['phone'] as String,
   status: json['status'] as String,
   locationLat: (json['location_lat'] as num?)?.toDouble(),

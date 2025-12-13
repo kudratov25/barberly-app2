@@ -32,7 +32,7 @@ class Shop with _$Shop {
   const factory Shop({
     required int id,
     required String name,
-    required String address,
+    String? address, // Null bo'lishi mumkin
     required String phone,
     required String status,
     @JsonKey(name: 'location_lat') double? locationLat,

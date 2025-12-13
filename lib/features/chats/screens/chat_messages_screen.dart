@@ -4,8 +4,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile/common/providers/providers.dart';
 import 'package:mobile/features/chats/models/chat.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/features/ratings/services/rating_service.dart';
 
-/// Chat messages screen with WhatsApp-style design
+/// Telegram-like chat messages screen
+/// 
+/// CRITICAL BEHAVIOR:
+/// - Messages ordered by created_at ASC (oldest at top, newest at bottom)
+/// - Sent messages: RIGHT side, Blue bubble
+/// - Received messages: LEFT side, White bubble
+/// - Normal ListView (NOT reverse:true)
+/// - Auto-scroll to bottom on open and new messages
+/// - Smart polling: only append new messages
 class ChatMessagesScreen extends ConsumerStatefulWidget {
   final int chatId;
 
@@ -25,10 +34,15 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
   int? _currentUserId;
   final Map<int, GlobalKey> _messageKeys = {};
   Timer? _refreshTimer;
-  List<ChatMessage> _messages = const [];
+  
+  // Messages list - ordered by created_at ASC (oldest first, newest last)
+  List<ChatMessage> _messages = [];
   bool _isLoadingMessages = true;
   String? _messagesError;
-  bool _initialAutoScrollDone = false;
+  bool _hasScrolledToBottom = false;
+  
+  // Track which orders have been rated to avoid showing dialog multiple times
+  final Set<int> _ratedOrders = {};
 
   @override
   void initState() {
@@ -36,13 +50,24 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
     // Load current user after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadCurrentUser();
+      // Mark chat as read when opening
+      _markChatAsRead();
     });
 
-    // Initial load + realtime polling (no FutureBuilder flicker)
+    // Initial load + realtime polling
     _fetchMessages(silent: false);
-    _refreshTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+    _refreshTimer = Timer.periodic(const Duration(seconds: 3), (_) {
       _fetchMessages(silent: true);
     });
+  }
+
+  /// Mark chat messages as read
+  Future<void> _markChatAsRead() async {
+    try {
+      await ref.read(chatServiceProvider).markAsRead(widget.chatId);
+    } catch (e) {
+      // Ignore error silently
+    }
   }
 
   Future<void> _loadCurrentUser() async {
@@ -58,6 +83,7 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
     }
   }
 
+  /// Scroll to a specific message (for reply navigation)
   void _scrollToMessage(int messageId) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final key = _messageKeys[messageId];
@@ -71,39 +97,34 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
     });
   }
 
+  /// Check if user is at bottom of chat
   bool _isAtBottom() {
     if (!_scrollController.hasClients) return true;
-    // In reverse:true ListView, bottom == offset 0.
-    return _scrollController.offset <= 24;
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final currentScroll = _scrollController.position.pixels;
+    // Consider at bottom if within 50px of bottom
+    return (maxScroll - currentScroll) <= 50;
   }
 
-  void _scrollToBottom() {
+  /// Scroll to bottom (newest message)
+  void _scrollToBottom({bool smooth = true}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_scrollController.hasClients) return;
-      _scrollController.animateTo(
-        0.0,
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOut,
-      );
+      final maxScroll = _scrollController.position.maxScrollExtent;
+      if (smooth) {
+        _scrollController.animateTo(
+          maxScroll,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
+        );
+      } else {
+        _scrollController.jumpTo(maxScroll);
+      }
     });
   }
 
-  bool _sameMessages(List<ChatMessage> a, List<ChatMessage> b) {
-    if (identical(a, b)) return true;
-    if (a.length != b.length) return false;
-    if (a.isEmpty) return true;
-    final aFirst = a.first;
-    final aLast = a.last;
-    final bFirst = b.first;
-    final bLast = b.last;
-    return aFirst.id == bFirst.id &&
-        aLast.id == bLast.id &&
-        aFirst.message == bFirst.message &&
-        aLast.message == bLast.message &&
-        aFirst.isRead == bFirst.isRead &&
-        aLast.isRead == bLast.isRead;
-  }
-
+  /// Fetch messages from API
+  /// Smart polling: only append new messages, don't rebuild entire list
   Future<void> _fetchMessages({required bool silent}) async {
     final wasAtBottom = _isAtBottom();
 
@@ -117,12 +138,77 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
     try {
       final page = await ref
           .read(chatServiceProvider)
-          .listMessages(chatId: widget.chatId);
-      final nextMessages = page.data;
+          .listMessages(chatId: widget.chatId, perPage: 100);
+      
+      // Backend returns messages ordered by created_at ASC (oldest first)
+      final newMessages = page.data;
 
-      final changed = !_sameMessages(_messages, nextMessages);
-      if (!changed) {
-        if (!silent && mounted) {
+      if (_messages.isEmpty) {
+        // First load: set all messages
+        if (mounted) {
+          setState(() {
+            _messages = newMessages;
+            _isLoadingMessages = false;
+            _messagesError = null;
+          });
+          
+          // Check for rating request messages on first load
+          for (final msg in newMessages) {
+            if (msg.messageType == 'system' && 
+                msg.orderId != null &&
+                msg.message.contains('baho') &&
+                !_ratedOrders.contains(msg.orderId)) {
+              // Show rating dialog after a short delay
+              Future.delayed(const Duration(milliseconds: 1000), () {
+                if (mounted) {
+                  _showRatingDialog(msg.orderId!);
+                }
+              });
+            }
+          }
+          
+          // Auto-scroll to bottom on first load
+          _scrollToBottom(smooth: false);
+          _hasScrolledToBottom = true;
+        }
+        return;
+      }
+
+      // Smart update: only append new messages
+      // Find the last message ID we have
+      final lastMessageId = _messages.isNotEmpty ? _messages.last.id : 0;
+      
+      // Find new messages (messages with ID > lastMessageId)
+      final newMessagesToAdd = newMessages
+          .where((msg) => msg.id > lastMessageId)
+          .toList();
+
+      if (newMessagesToAdd.isEmpty) {
+        // No new messages, but check for updates (is_read, edits)
+        final updatedMessages = <ChatMessage>[];
+        bool hasUpdates = false;
+
+        for (var existingMsg in _messages) {
+          final updatedMsg = newMessages.firstWhere(
+            (m) => m.id == existingMsg.id,
+            orElse: () => existingMsg,
+          );
+          
+          // Check if message was updated
+          if (updatedMsg.isRead != existingMsg.isRead ||
+              updatedMsg.message != existingMsg.message) {
+            hasUpdates = true;
+            updatedMessages.add(updatedMsg);
+          } else {
+            updatedMessages.add(existingMsg);
+          }
+        }
+
+        if (hasUpdates && mounted) {
+          setState(() {
+            _messages = updatedMessages;
+          });
+        } else if (!silent && mounted) {
           setState(() {
             _isLoadingMessages = false;
           });
@@ -130,16 +216,34 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
         return;
       }
 
-      if (!mounted) return;
-      setState(() {
-        _messages = nextMessages;
-        _isLoadingMessages = false;
-        _messagesError = null;
-      });
+      // Append new messages
+      if (mounted) {
+        setState(() {
+          _messages = [..._messages, ...newMessagesToAdd];
+          _isLoadingMessages = false;
+          _messagesError = null;
+        });
 
-      if (!_initialAutoScrollDone || wasAtBottom) {
-        _initialAutoScrollDone = true;
-        _scrollToBottom();
+        // Check for rating request messages
+        for (final msg in newMessagesToAdd) {
+          if (msg.messageType == 'system' && 
+              msg.orderId != null &&
+              msg.message.contains('baho') &&
+              !_ratedOrders.contains(msg.orderId)) {
+            // Show rating dialog after a short delay
+            Future.delayed(const Duration(milliseconds: 500), () {
+              if (mounted) {
+                _showRatingDialog(msg.orderId!);
+              }
+            });
+          }
+        }
+
+        // Auto-scroll to bottom if user was at bottom or on first load
+        if (wasAtBottom || !_hasScrolledToBottom) {
+          _hasScrolledToBottom = true;
+          _scrollToBottom();
+        }
       }
     } catch (e) {
       if (!mounted) return;
@@ -162,30 +266,39 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
     try {
       if (editingMessageId != null) {
         // Update existing message
-        await ref.read(chatServiceProvider).updateMessage(
-              chatId: widget.chatId,
-              messageId: editingMessageId,
-              message: message,
-            );
+        final updatedMessage = await ref.read(chatServiceProvider).updateMessage(
+          chatId: widget.chatId,
+          messageId: editingMessageId,
+          message: message,
+        );
+        
+        // Update message in list
         setState(() {
+          final index = _messages.indexWhere((m) => m.id == editingMessageId);
+          if (index != -1) {
+            _messages[index] = updatedMessage;
+          }
           _editingMessage = null;
           _messageController.clear();
         });
       } else {
         // Send new message or reply
-      await ref.read(chatServiceProvider).sendMessage(
-            chatId: widget.chatId,
-            message: message,
-              replyToId: replyToId,
-          );
+        final sentMessage = await ref.read(chatServiceProvider).sendMessage(
+          chatId: widget.chatId,
+          message: message,
+          replyToId: replyToId,
+        );
+        
+        // Append new message to list
         setState(() {
+          _messages = [..._messages, sentMessage];
           _replyingToMessage = null;
           _messageController.clear();
         });
+        
+        // Scroll to bottom
+        _scrollToBottom();
       }
-
-      await _fetchMessages(silent: true);
-      _scrollToBottom();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -198,6 +311,200 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
     } finally {
       setState(() => _isSending = false);
     }
+  }
+
+  /// Show rating dialog for completed order
+  Future<void> _showRatingDialog(int orderId) async {
+    // Don't show if already rated
+    if (_ratedOrders.contains(orderId)) return;
+    
+    int? selectedRating;
+    bool isLoading = false;
+    
+    await showDialog<Map<String, dynamic>>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.star, color: Colors.amber, size: 32),
+              SizedBox(width: 8),
+              Text(
+                'Baho bering',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Xizmat qanday bo\'ldi?',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Color(0xFF757575),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              // 5 yulduzcha
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(5, (index) {
+                  final rating = index + 1;
+                  final isSelected = selectedRating != null && rating <= selectedRating!;
+                  return GestureDetector(
+                    onTap: isLoading ? null : () {
+                      setDialogState(() {
+                        selectedRating = rating;
+                      });
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        child: Icon(
+                          isSelected ? Icons.star : Icons.star_border,
+                          size: 48,
+                          color: isSelected ? Colors.amber : Colors.grey.shade300,
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+              const SizedBox(height: 20),
+              // Rating text
+              if (selectedRating != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    selectedRating == 5
+                        ? 'Ajoyib! ⭐⭐⭐⭐⭐'
+                        : selectedRating == 4
+                            ? 'Yaxshi! ⭐⭐⭐⭐'
+                            : selectedRating == 3
+                                ? 'Yaxshi ⭐⭐⭐'
+                                : selectedRating == 2
+                                    ? 'O\'rtacha ⭐⭐'
+                                    : 'Yomon ⭐',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.amber,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          actions: [
+            // Keyinroq tugmasi
+            TextButton(
+              onPressed: isLoading ? null : () {
+                Navigator.pop(dialogContext, {'success': false});
+              },
+              child: const Text(
+                'Keyinroq',
+                style: TextStyle(color: Color(0xFF757575)),
+              ),
+            ),
+            // Yuborish tugmasi
+            ElevatedButton(
+              onPressed: (selectedRating != null && !isLoading) ? () async {
+                setDialogState(() {
+                  isLoading = true;
+                });
+                
+                try {
+                  await ref.read(ratingServiceProvider).createRating(
+                    orderId: orderId,
+                    rating: selectedRating!,
+                  );
+                  
+                  if (mounted) {
+                    setState(() {
+                      _ratedOrders.add(orderId);
+                    });
+                    
+                    Navigator.pop(dialogContext, {
+                      'success': true,
+                      'rating': selectedRating,
+                    });
+                    
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Row(
+                          children: [
+                            const Icon(Icons.check_circle, color: Colors.white),
+                            const SizedBox(width: 8),
+                            Text('Baho yuborildi! ${selectedRating} yulduz ⭐'),
+                          ],
+                        ),
+                        backgroundColor: Colors.green,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  setDialogState(() {
+                    isLoading = false;
+                  });
+                  
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Xatolik: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              } : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: selectedRating != null
+                    ? const Color(0xFF2196F3)
+                    : Colors.grey.shade300,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text(
+                      'Yuborish',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    // Dialog yopilganda hech narsa qilmaymiz, chunki rating allaqachon yuborilgan
   }
 
   Future<void> _deleteMessage(ChatMessage message) async {
@@ -224,10 +531,14 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
 
     try {
       await ref.read(chatServiceProvider).deleteMessage(
-            chatId: widget.chatId,
-            messageId: message.id,
-          );
-      await _fetchMessages(silent: true);
+        chatId: widget.chatId,
+        messageId: message.id,
+      );
+      
+      // Remove message from list
+      setState(() {
+        _messages = _messages.where((m) => m.id != message.id).toList();
+      });
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -268,7 +579,7 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
               child: const Icon(Icons.person, size: 20),
             ),
             const SizedBox(width: 12),
-            const Text('Barber'),
+            const Text('Chat'),
           ],
         ),
         actions: [
@@ -287,10 +598,10 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
           Expanded(
             child: Builder(
               builder: (context) {
-                if (_isLoadingMessages) {
+                if (_isLoadingMessages && _messages.isEmpty) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                if (_messagesError != null) {
+                if (_messagesError != null && _messages.isEmpty) {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -331,23 +642,20 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
                   );
                 }
 
-                // Reverse messages so newest is at bottom (Telegram style)
-                final reversedMessages = _messages.reversed.toList();
-
+                // Normal ListView - messages already sorted ASC (oldest first, newest last)
                 return ListView.builder(
                   controller: _scrollController,
-                  reverse: true, // Telegram style: newest at bottom
                   padding: const EdgeInsets.all(16),
-                  itemCount: reversedMessages.length,
+                  itemCount: _messages.length,
                   itemBuilder: (context, index) {
-                    final message = reversedMessages[index];
+                    final message = _messages[index];
                     // Create key for this message if it doesn't exist
                     _messageKeys.putIfAbsent(message.id, () => GlobalKey());
 
                     // Find replyTo message if exists
                     ChatMessage? replyToMessage;
                     if (message.replyToId != null) {
-                      replyToMessage = reversedMessages.firstWhere(
+                      replyToMessage = _messages.firstWhere(
                         (m) => m.id == message.replyToId,
                         orElse: () => message.replyTo ?? message,
                       );
@@ -423,29 +731,40 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
                     final bubble = Flexible(
                       child: _MessageBubble(
                         key: _messageKeys[message.id],
-                      message: message,
+                        message: message,
                         replyToMessage: replyToMessage,
-                      isSent: isSent,
+                        isSent: isSent,
                         onReplyTap: message.replyToId != null
                             ? () => _scrollToMessage(message.replyToId!)
                             : null,
                       ),
                     );
 
-                    // Make the menu stay close to the bubble (Telegram-like).
+                    // Message alignment: Sent = RIGHT, Received = LEFT
                     return Align(
                       alignment:
                           isSent ? Alignment.centerRight : Alignment.centerLeft,
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment:
+                            isSent ? MainAxisAlignment.end : MainAxisAlignment.start,
                         children: [
-                          Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: menu,
-                          ),
-                          const SizedBox(width: 4),
-                          bubble,
+                          if (!isSent) ...[
+                            bubble,
+                            const SizedBox(width: 4),
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: menu,
+                            ),
+                          ] else ...[
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: menu,
+                            ),
+                            const SizedBox(width: 4),
+                            bubble,
+                          ],
                         ],
                       ),
                     );
@@ -522,8 +841,8 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
                     constraints: const BoxConstraints(),
                   ),
                 ],
+              ),
             ),
-          ),
           // Message input
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
@@ -599,6 +918,11 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
   }
 }
 
+/// Message bubble widget
+/// 
+/// CRITICAL:
+/// - Sent messages: RIGHT aligned, Blue bubble
+/// - Received messages: LEFT aligned, White bubble
 class _MessageBubble extends StatelessWidget {
   final ChatMessage message;
   final ChatMessage? replyToMessage;
@@ -615,131 +939,123 @@ class _MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: isSent ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.75,
+    return Container(
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.of(context).size.width * 0.75,
+      ),
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: isSent ? const Color(0xFF2196F3) : Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: const Radius.circular(16),
+          topRight: const Radius.circular(16),
+          bottomLeft: Radius.circular(isSent ? 16 : 4),
+          bottomRight: Radius.circular(isSent ? 4 : 16),
         ),
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSent ? const Color(0xFF2196F3) : Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(16),
-            topRight: const Radius.circular(16),
-            bottomLeft: Radius.circular(isSent ? 16 : 4),
-            bottomRight: Radius.circular(isSent ? 4 : 16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 5,
+            offset: const Offset(0, 2),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 5,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-                // Reply preview (Telegram style)
-                if (replyToMessage != null)
-                  GestureDetector(
-                    onTap: onReplyTap,
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: isSent
-                            ? Colors.white.withOpacity(0.2)
-                            : Colors.grey.shade200,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border(
-                          left: BorderSide(
-                            color: isSent
-                                ? Colors.white
-                                : const Color(0xFF2196F3),
-                            width: 3,
-                          ),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            replyToMessage!.user?.name ?? 'You',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: isSent
-                                  ? Colors.white
-                                  : const Color(0xFF2196F3),
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            replyToMessage!.message,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: isSent
-                                  ? Colors.white70
-                                  : Colors.grey.shade700,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Reply preview (Telegram style)
+          if (replyToMessage != null)
+            GestureDetector(
+              onTap: onReplyTap,
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: isSent
+                      ? Colors.white.withOpacity(0.2)
+                      : Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border(
+                    left: BorderSide(
+                      color: isSent
+                          ? Colors.white
+                          : const Color(0xFF2196F3),
+                      width: 3,
                     ),
                   ),
-            Text(
-              message.message,
-              style: TextStyle(
-                fontSize: 15,
-                color: isSent ? Colors.white : const Color(0xFF212121),
-              ),
-            ),
-            const SizedBox(height: 4),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-            Text(
-                      () {
-                        try {
-                          final dt = DateTime.parse(message.createdAt);
-                          return DateFormat('HH:mm').format(dt);
-                        } catch (_) {
-                          return '';
-                        }
-                      }(),
-              style: TextStyle(
-                fontSize: 11,
-                color: isSent ? Colors.white70 : const Color(0xFF757575),
-              ),
-                    ),
-                    if (isSent) ...[
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.check,
-                        size: 14,
-                        color: message.isRead
-                            ? (isSent ? Colors.white : const Color(0xFF0A84FF))
-                            : (isSent ? Colors.white70 : Colors.grey),
+                    Text(
+                      replyToMessage!.user?.name ?? 'You',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: isSent
+                            ? Colors.white
+                            : const Color(0xFF2196F3),
                       ),
-                      if (message.isRead)
-                        Icon(
-                          Icons.check,
-                          size: 14,
-                          color: isSent ? Colors.white : const Color(0xFF0A84FF),
-                        ),
-                    ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      replyToMessage!.message,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isSent
+                            ? Colors.white70
+                            : Colors.grey.shade700,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ],
+                ),
+              ),
             ),
-          ],
-        ),
+          // Message text
+          Text(
+            message.message,
+            style: TextStyle(
+              fontSize: 15,
+              color: isSent ? Colors.white : const Color(0xFF212121),
+            ),
+          ),
+          const SizedBox(height: 4),
+          // Time and read status
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                () {
+                  try {
+                    final dt = DateTime.parse(message.createdAt);
+                    return DateFormat('HH:mm').format(dt);
+                  } catch (_) {
+                    return '';
+                  }
+                }(),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: isSent ? Colors.white70 : const Color(0xFF757575),
+                ),
+              ),
+              // Read status icons ONLY for sent messages
+              if (isSent) ...[
+                const SizedBox(width: 4),
+                Icon(
+                  message.isRead ? Icons.done_all : Icons.done,
+                  size: 14,
+                  color: message.isRead
+                      ? const Color(0xFF64B5F6) // Light blue for read
+                      : Colors.white70, // Gray for unread
+                ),
+              ],
+            ],
+          ),
+        ],
       ),
     );
   }
 }
-
-

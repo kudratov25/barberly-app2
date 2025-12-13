@@ -59,7 +59,7 @@ class _ShopsListScreenState extends ConsumerState<ShopsListScreen> {
       _filteredShops = _shops
           ?.where((shop) =>
               shop.name.toLowerCase().contains(query.toLowerCase()) ||
-              shop.address.toLowerCase().contains(query.toLowerCase()))
+              (shop.address?.toLowerCase().contains(query.toLowerCase()) ?? false))
           .toList();
     });
   }
@@ -204,7 +204,7 @@ class _ShopCard extends StatelessWidget {
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            shop.address,
+                            shop.address ?? 'Manzil ko\'rsatilmagan',
                             style: const TextStyle(
                               fontSize: 13,
                               color: Color(0xFF757575),

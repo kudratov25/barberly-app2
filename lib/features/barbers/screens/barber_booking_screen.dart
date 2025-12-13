@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/common/providers/providers.dart';
 import 'package:mobile/features/barbers/models/barber.dart';
+import 'package:mobile/features/barbers/models/available_slots.dart';
 import 'package:mobile/features/orders/models/order.dart';
 import 'package:mobile/features/services/models/service.dart' as svc;
 import 'package:mobile/features/shops/services/shop_service.dart';
@@ -34,8 +35,9 @@ class _BarberBookingScreenState extends ConsumerState<BarberBookingScreen> {
   List<BarberSchedule> _schedules = [];
   List<String> _timeSlots = [];
   Future<PaginatedResponse<svc.Service>>? _servicesFuture;
-  List<Order> _existingOrders = [];
-  bool _isLoadingOrders = false;
+  bool _isLoadingAvailableSlots = false;
+  AvailableSlotsResponse? _availableSlotsResponse;
+  String? _availableSlotsError;
 
   DateTime? _initialDateFromSchedules() {
     if (_schedules.isEmpty) return null;
@@ -49,146 +51,72 @@ class _BarberBookingScreenState extends ConsumerState<BarberBookingScreen> {
     return null;
   }
 
-  /// Fetch existing orders for this barber to filter out booked slots
-  Future<void> _fetchExistingOrders() async {
-    if (_isLoadingOrders) return;
-    setState(() => _isLoadingOrders = true);
+  /// Fetch available slots from API
+  Future<void> _fetchAvailableSlots() async {
+    if (_selectedDate == null) {
+      setState(() {
+        _timeSlots = [];
+        _availableSlotsResponse = null;
+      });
+      return;
+    }
+
+    if (_isLoadingAvailableSlots) return;
+    setState(() {
+      _isLoadingAvailableSlots = true;
+      _availableSlotsError = null;
+    });
 
     try {
-      final ordersResponse = await ref
-          .read(orderServiceProvider)
-          .listOrders(role: 'client', perPage: 100);
-
-      // Filter orders for this barber with pending/in_progress status
-      final now = DateTime.now();
-      _existingOrders = ordersResponse.data.where((order) {
-        // Only consider orders for this barber
-        if (order.barberId != widget.barberId) return false;
-
-        // Only consider pending or in_progress orders
-        final status = order.status.toLowerCase();
-        if (status != 'pending' && status != 'in_progress') return false;
-
-        // Only consider future orders
-        try {
-          final startTime = DateTime.parse(order.startTime);
-          return startTime.isAfter(now);
-        } catch (_) {
-          return false;
-        }
-      }).toList();
-
-      // Regenerate time slots with updated orders
-      if (_selectedDate != null) {
-        _generateTimeSlotsForDate(_selectedDate!);
+      final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate!);
+      final serviceIds = _selectedServices.map((s) => s.id).toList();
+      
+      // Calculate total duration from services if available
+      int? durationMinutes;
+      if (_selectedServices.isEmpty) {
+        // Default duration if no services selected
+        durationMinutes = 30;
+      } else {
+        // Calculate total duration from selected services
+        durationMinutes = _selectedServices.fold<int>(
+          0,
+          (sum, service) => sum + service.durationMinutes,
+        );
       }
-    } catch (_) {
-      // Ignore errors, continue with available slots
-    } finally {
+
+      final response = await ref.read(availableSlotsServiceProvider).getAvailableSlots(
+        barberId: widget.barberId,
+        date: dateStr,
+        serviceIds: serviceIds.isNotEmpty ? serviceIds : null,
+        durationMinutes: serviceIds.isEmpty ? durationMinutes : null,
+      );
+
       if (mounted) {
-        setState(() => _isLoadingOrders = false);
+        setState(() {
+          _availableSlotsResponse = response;
+          _timeSlots = response.availableSlots;
+          _isLoadingAvailableSlots = false;
+          _availableSlotsError = null;
+        });
+
+        // If previously selected time is not available for this date, reset it.
+        if (_selectedTimeSlot != null && !_timeSlots.contains(_selectedTimeSlot)) {
+          setState(() {
+            _selectedTimeSlot = null;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingAvailableSlots = false;
+          _availableSlotsError = e.toString();
+          _timeSlots = [];
+        });
       }
     }
   }
 
-  /// Check if a time slot is already booked
-  bool _isSlotBooked(DateTime slotDateTime) {
-    for (final order in _existingOrders) {
-      try {
-        final orderStartTime = DateTime.parse(order.startTime);
-        // Check if the slot overlaps with an existing order
-        // Orders are typically 30 minutes, so we check exact match or overlap
-        final slotEnd = slotDateTime.add(const Duration(minutes: 30));
-        final orderEnd = order.endTime != null
-            ? DateTime.parse(order.endTime!)
-            : orderStartTime.add(const Duration(minutes: 30));
-
-        // Check if slots overlap
-        if (slotDateTime.isBefore(orderEnd) && slotEnd.isAfter(orderStartTime)) {
-          return true;
-        }
-      } catch (_) {
-        // Skip invalid dates
-      }
-    }
-    return false;
-  }
-
-  void _generateTimeSlotsForDate(DateTime date) {
-    _timeSlots = [];
-    if (_schedules.isEmpty) return;
-
-    // Laravel docs: day_of_week 0-6 (yakshanba-shanba)
-    final dayIndex = date.weekday % 7; // DateTime: 1=Mon..7=Sun
-
-    final daySchedules =
-        _schedules.where((s) => s.dayOfWeek == dayIndex && s.isActive).toList();
-    if (daySchedules.isEmpty) return;
-
-    for (final sched in daySchedules) {
-      DateTime? start;
-      DateTime? end;
-      DateTime? breakStart;
-      DateTime? breakEnd;
-
-      try {
-        final startParts = sched.startTime.split(':');
-        final endParts = sched.endTime.split(':');
-        start = DateTime(date.year, date.month, date.day,
-            int.parse(startParts[0]), int.parse(startParts[1]));
-        end = DateTime(date.year, date.month, date.day,
-            int.parse(endParts[0]), int.parse(endParts[1]));
-
-        if (sched.breakStart != null && sched.breakEnd != null) {
-          final bStartParts = sched.breakStart!.split(':');
-          final bEndParts = sched.breakEnd!.split(':');
-          breakStart = DateTime(date.year, date.month, date.day,
-              int.parse(bStartParts[0]), int.parse(bStartParts[1]));
-          breakEnd = DateTime(date.year, date.month, date.day,
-              int.parse(bEndParts[0]), int.parse(bEndParts[1]));
-        }
-      } catch (_) {
-        continue;
-      }
-
-      var slot = start;
-      final now = DateTime.now();
-
-      while (slot.isBefore(end)) {
-        // Skip past times for today
-        if (date.year == now.year &&
-            date.month == now.month &&
-            date.day == now.day &&
-            slot.isBefore(now)) {
-          slot = slot.add(const Duration(minutes: 30));
-          continue;
-        }
-
-        // Skip break time
-        if (breakStart != null &&
-            breakEnd != null &&
-            !slot.isBefore(breakStart) &&
-            slot.isBefore(breakEnd)) {
-          slot = slot.add(const Duration(minutes: 30));
-          continue;
-        }
-
-        // Skip if this slot is already booked
-        if (_isSlotBooked(slot)) {
-          slot = slot.add(const Duration(minutes: 30));
-          continue;
-        }
-
-        _timeSlots.add(DateFormat('HH:mm').format(slot));
-        slot = slot.add(const Duration(minutes: 30));
-      }
-    }
-
-    // If previously selected time is not available for this date, reset it.
-    if (_selectedTimeSlot != null && !_timeSlots.contains(_selectedTimeSlot)) {
-      _selectedTimeSlot = null;
-    }
-  }
 
   @override
   void initState() {
@@ -202,14 +130,12 @@ class _BarberBookingScreenState extends ConsumerState<BarberBookingScreen> {
           perPage: 200,
         );
 
-    // Fetch existing orders to filter out booked slots
-    _fetchExistingOrders();
-
     // Show time slots even before user picks a date:
     // preselect the nearest working date (usually today).
     _selectedDate = _initialDateFromSchedules();
     if (_selectedDate != null) {
-      _generateTimeSlotsForDate(_selectedDate!);
+      // Fetch available slots when date is selected
+      _fetchAvailableSlots();
     }
   }
 
@@ -262,14 +188,27 @@ class _BarberBookingScreenState extends ConsumerState<BarberBookingScreen> {
 
     try {
       final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate!);
-      final startTime = '$dateStr ${_selectedTimeSlot!}:00';
+      
+      // Parse time slot safely (format: "HH:mm" or "HH:mm:ss")
+      final timeParts = _selectedTimeSlot!.split(':');
+      if (timeParts.length < 2) {
+        throw 'Invalid time format: $_selectedTimeSlot';
+      }
+      
+      final hour = int.parse(timeParts[0]);
+      final minute = int.parse(timeParts[1]);
+      
+      // Format startTime as "YYYY-MM-DD HH:mm:ss"
+      final timeStr = '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}:00';
+      final startTime = '$dateStr $timeStr';
+      
       final serviceIds = _selectedServices.map((s) => s.id).toList();
       final startDateTime = DateTime(
         _selectedDate!.year,
         _selectedDate!.month,
         _selectedDate!.day,
-        int.parse(_selectedTimeSlot!.split(':')[0]),
-        int.parse(_selectedTimeSlot!.split(':')[1]),
+        hour,
+        minute,
       );
 
       final order = await ref.read(orderServiceProvider).createOrder(
@@ -278,8 +217,8 @@ class _BarberBookingScreenState extends ConsumerState<BarberBookingScreen> {
             startTime: startTime,
           );
 
-      // Refresh orders list to update available slots
-      await _fetchExistingOrders();
+      // Refresh available slots after booking
+      await _fetchAvailableSlots();
 
       // Create or get chat with this barber and send booking info message
       try {
@@ -287,14 +226,12 @@ class _BarberBookingScreenState extends ConsumerState<BarberBookingScreen> {
             .read(chatServiceProvider)
             .createOrGetChat(widget.barberId);
 
+        // Format: "Yangi bron: Soch olish - 12:00-12:20"
         final servicesText = _selectedServices.map((s) => s.name).join(', ');
-        final message = [
-          'New booking',
-          'Date: $dateStr',
-          'Time: ${_selectedTimeSlot!}',
-          'Services: $servicesText',
-          'Total: $_totalPrice UZS',
-        ].join('\n');
+        final endTime = order.endTime != null
+            ? DateFormat('HH:mm').format(DateTime.parse(order.endTime!))
+            : _selectedTimeSlot;
+        final message = 'Yangi bron: $servicesText - ${_selectedTimeSlot}-$endTime';
 
         await ref.read(chatServiceProvider).sendMessage(
               chatId: chat.id,
@@ -470,10 +407,10 @@ class _BarberBookingScreenState extends ConsumerState<BarberBookingScreen> {
                             if (date != null) {
                               setState(() {
                                 _selectedDate = date;
+                                _selectedTimeSlot = null; // Reset selected time when date changes
                               });
-                              // Refresh orders and regenerate time slots
-                              await _fetchExistingOrders();
-                              _generateTimeSlotsForDate(date);
+                              // Fetch available slots for new date
+                              await _fetchAvailableSlots();
                             }
                           },
                           borderRadius: BorderRadius.circular(12),
@@ -528,7 +465,33 @@ class _BarberBookingScreenState extends ConsumerState<BarberBookingScreen> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        if (_selectedDate != null && _timeSlots.isEmpty)
+                        if (_isLoadingAvailableSlots)
+                          const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: CircularProgressIndicator(),
+                            ),
+                          )
+                        else if (_availableSlotsError != null)
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFEBEE),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.red.withOpacity(0.35),
+                              ),
+                            ),
+                            child: Text(
+                              'Xatolik: $_availableSlotsError',
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          )
+                        else if (_selectedDate != null && _timeSlots.isEmpty)
                           Container(
                             width: double.infinity,
                             padding: const EdgeInsets.all(12),
@@ -540,35 +503,140 @@ class _BarberBookingScreenState extends ConsumerState<BarberBookingScreen> {
                               ),
                             ),
                             child: const Text(
-                              'Bu kunga bo‘sh vaqt yo‘q',
+                              'Bu kunga bo\'sh vaqt yo\'q',
                               style: TextStyle(
                                 color: Color(0xFFB45309),
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                           )
-                        else
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: _timeSlots.map((time) {
-                            final isSelected = _selectedTimeSlot == time;
-                            return ChoiceChip(
-                              label: Text(time),
-                              selected: isSelected,
-                              onSelected: (selected) {
-                                setState(() {
-                                  _selectedTimeSlot = selected ? time : null;
-                                });
-                              },
-                              selectedColor: const Color(0xFF2196F3),
-                              labelStyle: TextStyle(
-                                color:
-                                    isSelected ? Colors.white : Colors.black87,
+                        else ...[
+                          // Show booked slots info if available
+                          if (_availableSlotsResponse?.bookedSlots != null &&
+                              _availableSlotsResponse!.bookedSlots!.isNotEmpty)
+                            Container(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE3F2FD),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: const Color(0xFF2196F3).withOpacity(0.3),
+                                ),
                               ),
-                            );
-                          }).toList(),
-                        ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.info_outline,
+                                        size: 16,
+                                        color: Color(0xFF2196F3),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'Band vaqtlar (${_availableSlotsResponse!.bookedSlots!.length})',
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFF2196F3),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Wrap(
+                                    spacing: 6,
+                                    runSpacing: 6,
+                                    children: _availableSlotsResponse!.bookedSlots!
+                                        .map((booked) {
+                                      // Parse time safely - backend returns "HH:mm" format, but handle other formats too
+                                      String startTime = booked.startTime;
+                                      String endTime = booked.endTime;
+                                      
+                                      // Helper function to extract HH:mm from various formats
+                                      String extractTime(String timeStr) {
+                                        // If already in HH:mm format (5 chars), return as-is
+                                        if (timeStr.length == 5 && timeStr.contains(':')) {
+                                          return timeStr;
+                                        }
+                                        
+                                        // If format is "YYYY-MM-DDTHH:mm:ss" or "YYYY-MM-DDTHH:mm", extract time part
+                                        if (timeStr.contains('T')) {
+                                          final parts = timeStr.split('T');
+                                          if (parts.length >= 2) {
+                                            final timePart = parts[1];
+                                            // Extract HH:mm (first 5 chars after T)
+                                            return timePart.length >= 5 
+                                                ? timePart.substring(0, 5) 
+                                                : timePart;
+                                          }
+                                        }
+                                        
+                                        // If format is "YYYY-MM-DD HH:mm:ss" or "YYYY-MM-DD HH:mm", extract time part
+                                        if (timeStr.contains(' ')) {
+                                          final parts = timeStr.split(' ');
+                                          if (parts.length >= 2) {
+                                            final timePart = parts[1];
+                                            // Extract HH:mm (first 5 chars after space)
+                                            return timePart.length >= 5 
+                                                ? timePart.substring(0, 5) 
+                                                : timePart;
+                                          }
+                                        }
+                                        
+                                        // If longer than 5 chars, take first 5
+                                        return timeStr.length > 5 ? timeStr.substring(0, 5) : timeStr;
+                                      }
+                                      
+                                      startTime = extractTime(startTime);
+                                      endTime = extractTime(endTime);
+                                      return Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey.shade200,
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          '$startTime-$endTime',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.grey.shade700,
+                                          ),
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          // Available time slots
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: _timeSlots.map((time) {
+                              final isSelected = _selectedTimeSlot == time;
+                              return ChoiceChip(
+                                label: Text(time),
+                                selected: isSelected,
+                                onSelected: (selected) {
+                                  setState(() {
+                                    _selectedTimeSlot = selected ? time : null;
+                                  });
+                                },
+                                selectedColor: const Color(0xFF2196F3),
+                                labelStyle: TextStyle(
+                                  color:
+                                      isSelected ? Colors.white : Colors.black87,
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -635,14 +703,19 @@ class _BarberBookingScreenState extends ConsumerState<BarberBookingScreen> {
                                     _selectedServices.contains(service);
                                 return CheckboxListTile(
                                   value: isSelected,
-                                  onChanged: (checked) {
+                                  onChanged: (checked) async {
                                     setState(() {
                                       if (checked == true) {
                                         _selectedServices.add(service);
                                       } else {
                                         _selectedServices.remove(service);
                                       }
+                                      _selectedTimeSlot = null; // Reset selected time when services change
                                     });
+                                    // Refresh available slots when services change
+                                    if (_selectedDate != null) {
+                                      await _fetchAvailableSlots();
+                                    }
                                   },
                                   title: Text(service.name),
                                   subtitle: Text(

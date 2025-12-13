@@ -10,6 +10,7 @@ class Chat with _$Chat {
     required String type,
     @JsonKey(name: 'created_at') required String createdAt,
     @JsonKey(name: 'latest_message') ChatMessage? latestMessage,
+    @JsonKey(name: 'unread_count') int? unreadCount,
     required List<ChatUser> users,
   }) = _Chat;
 
