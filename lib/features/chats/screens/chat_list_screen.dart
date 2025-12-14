@@ -126,7 +126,7 @@ class _ChatCard extends StatelessWidget {
                     width: 50,
                     height: 50,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF2196F3),
+                      color: const Color(0xFF2C4B77) ,
                       shape: BoxShape.circle,
                     ),
                     child: Center(
@@ -207,7 +207,7 @@ class _ChatCard extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 12,
                                 color: hasUnread
-                                    ? const Color(0xFF2196F3)
+                                    ? const Color(0xFF2C4B77)
                                     : const Color(0xFF757575),
                                 fontWeight:
                                     hasUnread ? FontWeight.w600 : FontWeight.normal,
@@ -243,7 +243,7 @@ class _ChatCard extends StatelessWidget {
                               vertical: 4,
                             ),
                             decoration: const BoxDecoration(
-                              color: Color(0xFF2196F3),
+                              color: Color(0xFF2C4B77) ,
                               borderRadius: BorderRadius.all(Radius.circular(12)),
                             ),
                             child: Text(

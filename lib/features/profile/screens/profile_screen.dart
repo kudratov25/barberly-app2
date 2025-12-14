@@ -81,7 +81,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               SliverAppBar(
                 expandedHeight: 200,
                 pinned: true,
-                backgroundColor: const Color(0xFF0A84FF),
+                backgroundColor: const Color(0xFF2C4B77),
                 flexibleSpace: FlexibleSpaceBar(
                   title: const Text(
                     'Profile',
@@ -102,7 +102,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Color(0xFF0A84FF),
+                          Color(0xFF2C4B77) ,
                           Color(0xFF4DA8FF),
                         ],
                       ),
@@ -204,16 +204,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           color: cs.onSurface.withOpacity(0.7),
                         ),
                       ),
-                      if (user.email != null) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          user.email!,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: cs.onSurface.withOpacity(0.7),
-                          ),
-                        ),
-                      ],
+                      // Email removed from UI (backend no longer requires it)
                     ],
                   ),
                 ),

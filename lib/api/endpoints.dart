@@ -3,7 +3,7 @@ class ApiEndpoints {
   // Update this to your Laravel backend URL (include port if needed)
   // For Laravel default: http://10.245.202.220:8000
   // For production: https://yourdomain.com
-  static const String baseUrl = 'http://localhost:8000';
+  static const String baseUrl = 'https://api.barberly.uz/';
   static const String apiPrefix = '/api/v1';
 
   // Auth endpoints

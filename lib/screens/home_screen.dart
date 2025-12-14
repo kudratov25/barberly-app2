@@ -195,7 +195,7 @@ class _BarberHorizontalCard extends StatelessWidget {
                     decoration: const BoxDecoration(
                       shape: BoxShape.circle,
                       gradient: LinearGradient(
-                        colors: [Color(0xFF0A84FF), Color(0xFF4DA8FF)],
+                        colors: [Color(0xFF2C4B77) , Color(0xFF4DA8FF)],
                         ),
                     ),
                     child: const Icon(Icons.person, color: Colors.white),
@@ -270,7 +270,7 @@ class _BarberHorizontalCard extends StatelessWidget {
                       context.push('/barbers/${barber.id}/book'),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 10),
-                    backgroundColor: const Color(0xFF0A84FF),
+                    backgroundColor: const Color(0xFF2C4B77) ,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(999),
@@ -311,7 +311,8 @@ class _Header extends StatelessWidget {
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
-                  colors: [Color(0xFF0A84FF), Color(0xFF4DA8FF)],
+                  colors: [Color(0xFF2C4B77),
+                    Color(0xFF4DA8FF)],
                 ),
               ),
               child: userAsync.when(
@@ -466,10 +467,10 @@ class _Header extends StatelessWidget {
               margin: const EdgeInsets.only(top: 12),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF0A84FF).withOpacity(0.1),
+                color: const Color(0xFF2C4B77).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: const Color(0xFF0A84FF).withOpacity(0.2),
+                  color: const Color(0xFF2C4B77).withOpacity(0.2),
                   width: 1,
                 ),
               ),
@@ -478,7 +479,7 @@ class _Header extends StatelessWidget {
                   const Icon(
                     Icons.calendar_today,
                     size: 18,
-                    color: Color(0xFF0A84FF),
+                    color: Color(0xFF2C4B77) ,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -545,7 +546,7 @@ class _Header extends StatelessWidget {
                     icon: const Icon(
                       Icons.arrow_forward_ios,
                       size: 16,
-                      color: Color(0xFF0A84FF),
+                      color: Color(0xFF2C4B77) ,
                     ),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
@@ -658,7 +659,8 @@ class _NextAppointmentCard extends StatelessWidget {
                   bottomLeft: Radius.circular(20),
                 ),
                 gradient: LinearGradient(
-                  colors: [Color(0xFF0A84FF), Color(0xFF4DA8FF)],
+                  colors: [Color(0xFF2C4B77) ,
+                    Color(0xFF4DA8FF)],
                 ),
               ),
             ),
@@ -674,7 +676,8 @@ class _NextAppointmentCard extends StatelessWidget {
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
-                      colors: [Color(0xFF0A84FF), Color(0xFF4DA8FF)],
+                      colors: [Color(0xFF2C4B77) ,
+                        Color(0xFF4DA8FF)],
                     ),
                   ),
                   child: const Icon(
@@ -760,7 +763,7 @@ class _NextAppointmentCard extends StatelessWidget {
                   icon: const Icon(
                     Icons.arrow_forward_ios_rounded,
                     size: 18,
-                    color: Color(0xFF0A84FF),
+                    color: Color(0xFF2C4B77) ,
                   ),
                 ),
               ],
@@ -794,12 +797,12 @@ class _EmptyNextAppointmentCard extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: const Color(0xFF0A84FF).withOpacity(0.1),
+              color: const Color(0xFF2C4B77).withOpacity(0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(
               Icons.calendar_today_outlined,
-              color: Color(0xFF0A84FF),
+              color: Color(0xFF2C4B77) ,
             ),
           ),
           const SizedBox(width: 12),
@@ -832,7 +835,7 @@ class _EmptyNextAppointmentCard extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
               padding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              backgroundColor: const Color(0xFF0A84FF),
+              backgroundColor: const Color(0xFF2C4B77),
                       foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(999),
@@ -922,7 +925,7 @@ class _QuickActionButton extends StatelessWidget {
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
-                      colors: [Color(0xFF0A84FF), Color(0xFF4DA8FF)],
+                      colors: [Color(0xFF2C4B77) , Color(0xFF4DA8FF)],
                     ),
                   ),
                   child: Icon(
@@ -1157,7 +1160,7 @@ class _StatsItem extends StatelessWidget {
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF0A84FF),
+              color: Color(0xFF2C4B77) ,
             ),
           ),
         ],

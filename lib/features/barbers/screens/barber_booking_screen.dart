@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/common/providers/providers.dart';
 import 'package:mobile/features/barbers/models/barber.dart';
 import 'package:mobile/features/barbers/models/available_slots.dart';
-import 'package:mobile/features/orders/models/order.dart';
 import 'package:mobile/features/services/models/service.dart' as svc;
 import 'package:mobile/features/shops/services/shop_service.dart';
 import 'package:intl/intl.dart';
@@ -302,10 +301,10 @@ class _BarberBookingScreenState extends ConsumerState<BarberBookingScreen> {
           SliverAppBar(
             expandedHeight: 200,
             pinned: true,
-            backgroundColor: const Color(0xFF2196F3),
+            backgroundColor: const Color(0xFF2C4B77) ,
             actions: [
               IconButton(
-                icon: const Icon(Icons.chat_bubble_outline),
+                icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
                 onPressed: _openChat,
               ),
             ],
@@ -313,6 +312,7 @@ class _BarberBookingScreenState extends ConsumerState<BarberBookingScreen> {
               title: Text(
                 _barber?.name ?? 'Barber #${widget.barberId}',
                 style: const TextStyle(
+                  color: Colors.white,
                   fontWeight: FontWeight.bold,
                   shadows: [
                     Shadow(
@@ -324,21 +324,12 @@ class _BarberBookingScreenState extends ConsumerState<BarberBookingScreen> {
                 ),
               ),
               background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Color(0xFF2196F3),
-                      Color(0xFF1976D2),
-                    ],
-                  ),
-                ),
+                color: const Color(0xFF2C4B77) ,
                 child: const Center(
                   child: Icon(
                     Icons.person,
                     size: 80,
-                    color: Colors.white54,
+                    color: Colors.white70,
                   ),
                 ),
               ),
@@ -418,14 +409,14 @@ class _BarberBookingScreenState extends ConsumerState<BarberBookingScreen> {
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
                               border: Border.all(
-                                color: const Color(0xFF2196F3),
+                                color: const Color(0xFF2C4B77) ,
                               ),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
                               children: [
                                 const Icon(Icons.calendar_today,
-                                    color: Color(0xFF2196F3)),
+                                    color: Color(0xFF2C4B77) ),
                                 const SizedBox(width: 12),
                                 Text(
                                   _selectedDate == null
@@ -521,7 +512,7 @@ class _BarberBookingScreenState extends ConsumerState<BarberBookingScreen> {
                                 color: const Color(0xFFE3F2FD),
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
-                                  color: const Color(0xFF2196F3).withOpacity(0.3),
+                                  color: const Color(0xFF2C4B77) .withOpacity(0.3),
                                 ),
                               ),
                               child: Column(
@@ -532,7 +523,7 @@ class _BarberBookingScreenState extends ConsumerState<BarberBookingScreen> {
                                       const Icon(
                                         Icons.info_outline,
                                         size: 16,
-                                        color: Color(0xFF2196F3),
+                                        color: Color(0xFF2C4B77) ,
                                       ),
                                       const SizedBox(width: 8),
                                       Text(
@@ -540,7 +531,7 @@ class _BarberBookingScreenState extends ConsumerState<BarberBookingScreen> {
                                         style: const TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w600,
-                                          color: Color(0xFF2196F3),
+                                          color: Color(0xFF2C4B77) ,
                                         ),
                                       ),
                                     ],
@@ -628,7 +619,7 @@ class _BarberBookingScreenState extends ConsumerState<BarberBookingScreen> {
                                     _selectedTimeSlot = selected ? time : null;
                                   });
                                 },
-                                selectedColor: const Color(0xFF2196F3),
+                                selectedColor: const Color(0xFF2C4B77) ,
                                 labelStyle: TextStyle(
                                   color:
                                       isSelected ? Colors.white : Colors.black87,
@@ -721,7 +712,7 @@ class _BarberBookingScreenState extends ConsumerState<BarberBookingScreen> {
                                   subtitle: Text(
                                     '${service.price} UZS • ${service.durationMinutes} min',
                                   ),
-                                  activeColor: const Color(0xFF2196F3),
+                                  activeColor: const Color(0xFF2C4B77) ,
                                 );
                               }).toList(),
                             );
@@ -768,7 +759,7 @@ class _BarberBookingScreenState extends ConsumerState<BarberBookingScreen> {
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF2196F3),
+                      color: Color(0xFF2C4B77) ,
                     ),
                   ),
                 ],
@@ -784,7 +775,7 @@ class _BarberBookingScreenState extends ConsumerState<BarberBookingScreen> {
                       ? null
                       : _bookAppointment,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2196F3),
+                    backgroundColor: const Color(0xFF2C4B77) ,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(

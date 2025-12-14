@@ -15,7 +15,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
-  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _passwordConfirmationController = TextEditingController();
   bool _isLoading = false;
@@ -35,7 +34,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       await ref.read(authServiceProvider).register(
             name: _nameController.text.trim(),
             phone: _phoneController.text.trim(),
-            email: _emailController.text.trim(),
             password: _passwordController.text,
             passwordConfirmation: _passwordConfirmationController.text,
           );
@@ -55,7 +53,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
-    _emailController.dispose();
     _passwordController.dispose();
     _passwordConfirmationController.dispose();
     super.dispose();
@@ -190,30 +187,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter your phone number';
-                    }
-                    return null;
-                  },
-                ),
-                
-                const SizedBox(height: 16),
-                
-                // Email input
-                TextFormField(
-                  controller: _emailController,
-                  decoration: InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: const Icon(Icons.email_outlined),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your email';
-                    }
-                    if (!value.contains('@')) {
-                      return 'Please enter a valid email';
                     }
                     return null;
                   },

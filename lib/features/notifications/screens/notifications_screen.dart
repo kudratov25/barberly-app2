@@ -104,7 +104,7 @@ class _NotificationTile extends StatelessWidget {
           decoration: const BoxDecoration(
             shape: BoxShape.circle,
             gradient: LinearGradient(
-              colors: [Color(0xFF0A84FF), Color(0xFF4DA8FF)],
+              colors: [Color(0xFF2C4B77) , Color(0xFF4DA8FF)],
             ),
           ),
           child: Icon(icon, color: Colors.white, size: 22),

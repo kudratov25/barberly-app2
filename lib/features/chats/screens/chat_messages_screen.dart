@@ -556,7 +556,7 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
               } : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: selectedRating != null
-                    ? const Color(0xFF2196F3)
+                    ? const Color(0xFF2C4B77)
                     : Colors.grey.shade300,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -647,7 +647,7 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF2196F3),
+        backgroundColor: const Color(0xFF2C4B77) ,
         foregroundColor: Colors.white,
         elevation: 0,
         title: Row(
@@ -885,7 +885,7 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
                     decoration: BoxDecoration(
                       color: _editingMessage != null
                           ? Colors.orange
-                          : const Color(0xFF2196F3),
+                          : const Color(0xFF2C4B77) ,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -902,7 +902,7 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF2196F3),
+                            color: Color(0xFF2C4B77) ,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -979,7 +979,7 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
                   const SizedBox(width: 8),
                   Container(
                     decoration: const BoxDecoration(
-                      color: Color(0xFF2196F3),
+                      color: Color(0xFF2C4B77) ,
                       shape: BoxShape.circle,
                     ),
                     child: IconButton(
@@ -1040,7 +1040,7 @@ class _MessageBubble extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: isSent ? const Color(0xFF2196F3) : Colors.white,
+        color: isSent ? const Color(0xFF2C4B77)  : Colors.white,
         borderRadius: BorderRadius.only(
           topLeft: const Radius.circular(16),
           topRight: const Radius.circular(16),
@@ -1074,7 +1074,7 @@ class _MessageBubble extends StatelessWidget {
                     left: BorderSide(
                       color: isSent
                           ? Colors.white
-                          : const Color(0xFF2196F3),
+                          : const Color(0xFF2C4B77) ,
                       width: 3,
                     ),
                   ),
@@ -1089,7 +1089,7 @@ class _MessageBubble extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                         color: isSent
                             ? Colors.white
-                            : const Color(0xFF2196F3),
+                            : const Color(0xFF2C4B77) ,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -1142,7 +1142,7 @@ class _MessageBubble extends StatelessWidget {
                   message.isRead ? Icons.done_all : Icons.done,
                   size: 14,
                   color: message.isRead
-                      ? const Color(0xFF64B5F6) // Light blue for read
+                      ? const Color(0xFF2C4B77)  // Light blue for read
                       : Colors.white70, // Gray for unread
                 ),
               ],
