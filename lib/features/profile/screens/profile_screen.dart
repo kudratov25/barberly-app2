@@ -204,16 +204,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           color: cs.onSurface.withOpacity(0.7),
                         ),
                       ),
-                      if (user.email != null) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          user.email!,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: cs.onSurface.withOpacity(0.7),
-                          ),
-                        ),
-                      ],
+                      // Email removed from UI (backend no longer requires it)
                     ],
                   ),
                 ),

@@ -15,7 +15,6 @@ class AuthService {
   Future<AuthResponse> register({
     required String name,
     required String phone,
-    required String email,
     required String password,
     required String passwordConfirmation,
   }) async {
@@ -25,7 +24,6 @@ class AuthService {
         data: {
           'name': name,
           'phone': phone,
-          'email': email,
           'password': password,
           'password_confirmation': passwordConfirmation,
           'app_type': 'client_side', // Client side app uchun
