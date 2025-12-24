@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,11 +8,85 @@ import 'package:mobile/features/chats/models/chat.dart';
 import 'package:intl/intl.dart';
 
 /// Chat list screen with modern design
-class ChatListScreen extends ConsumerWidget {
+class ChatListScreen extends ConsumerStatefulWidget {
   const ChatListScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ChatListScreen> createState() => _ChatListScreenState();
+}
+
+class _ChatListScreenState extends ConsumerState<ChatListScreen> {
+  List<Chat> _chats = [];
+  bool _isLoading = true;
+  String? _error;
+  int? _currentUserId;
+  Timer? _refreshTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadCurrentUser();
+      _fetchChats(silent: false);
+      // Real-time polling: har 3 soniyada yangilash
+      _refreshTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+        _fetchChats(silent: true);
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadCurrentUser() async {
+    try {
+      final user = await ref.read(authServiceProvider).getCurrentUser();
+      if (mounted) {
+        setState(() {
+          _currentUserId = user.id;
+        });
+      }
+    } catch (e) {
+      // Ignore error, will use null
+    }
+  }
+
+  Future<void> _fetchChats({required bool silent}) async {
+    if (!silent) {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+    }
+
+    try {
+      final chats = await ref.read(chatServiceProvider).listChats();
+      if (mounted) {
+        setState(() {
+          _chats = chats;
+          _isLoading = false;
+          _error = null;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = e.toString();
+        });
+      }
+    }
+  }
+
+  Future<void> _onRefresh() async {
+    await _fetchChats(silent: false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
       appBar: AppBar(
@@ -19,27 +94,26 @@ class ChatListScreen extends ConsumerWidget {
         backgroundColor: Colors.white,
         elevation: 0,
       ),
-      body: FutureBuilder<List<Chat>>(
-        future: ref.read(chatServiceProvider).listChats(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(
+      body: _isLoading && _chats.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null && _chats.isEmpty
+          ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline,
-                      size: 48, color: Colors.red),
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
                   const SizedBox(height: 16),
-                  Text('Error: ${snapshot.error}'),
+                  Text('Error: $_error'),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => _fetchChats(silent: false),
+                    child: const Text('Retry'),
+                  ),
                 ],
               ),
-            );
-          }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(
+            )
+          : _chats.isEmpty
+          ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -64,24 +138,18 @@ class ChatListScreen extends ConsumerWidget {
                   ),
                 ],
               ),
-            );
-          }
-
-          return RefreshIndicator(
-            onRefresh: () async {
-              // Trigger rebuild
-            },
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: snapshot.data!.length,
-              itemBuilder: (context, index) {
-                final chat = snapshot.data![index];
-                return _ChatCard(chat: chat);
-              },
+            )
+          : RefreshIndicator(
+              onRefresh: _onRefresh,
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: _chats.length,
+                itemBuilder: (context, index) {
+                  final chat = _chats[index];
+                  return _ChatCard(chat: chat, currentUserId: _currentUserId);
+                },
+              ),
             ),
-          );
-        },
-      ),
       bottomNavigationBar: const BottomNavBar(currentIndex: 2),
     );
   }
@@ -89,15 +157,37 @@ class ChatListScreen extends ConsumerWidget {
 
 class _ChatCard extends StatelessWidget {
   final Chat chat;
+  final int? currentUserId;
 
-  const _ChatCard({required this.chat});
+  const _ChatCard({required this.chat, this.currentUserId});
 
   @override
   Widget build(BuildContext context) {
     final otherUser = chat.users.isNotEmpty ? chat.users.first : null;
+
+    // Faqat barber yuborgan o'qilmagan habarlar uchun belgi ko'rsatish
+    // Agar latest message foydalanuvchi tomonidan yuborilgan bo'lsa, belgi ko'rsatilmaydi
+    final latestMessage = chat.latestMessage;
+    final isLatestMessageFromCurrentUser =
+        currentUserId != null &&
+        latestMessage != null &&
+        latestMessage.userId == currentUserId;
+
     // Unread count: backend'dan kelgan yoki latest_message is_read dan hisoblash
-    final unreadCount = chat.unreadCount ?? 
-        (chat.latestMessage?.isRead == false ? 1 : 0);
+    // Faqat barber yuborgan habarlar uchun
+    int unreadCount;
+    if (isLatestMessageFromCurrentUser) {
+      // Agar oxirgi xabar foydalanuvchi tomonidan yuborilgan bo'lsa, belgi ko'rsatilmaydi
+      unreadCount = 0;
+    } else if (chat.unreadCount != null && chat.unreadCount! > 0) {
+      // Backend'dan kelgan unread count (barber yuborgan o'qilmagan habarlar soni)
+      unreadCount = chat.unreadCount!;
+    } else if (latestMessage != null && !latestMessage.isRead) {
+      // Agar latest message o'qilmagan bo'lsa va barber tomonidan yuborilgan bo'lsa
+      unreadCount = 1;
+    } else {
+      unreadCount = 0;
+    }
     final hasUnread = unreadCount > 0;
 
     DateTime? _parseCreatedAt(String? value) {
@@ -120,13 +210,13 @@ class _ChatCard extends StatelessWidget {
             children: [
               // Avatar with unread badge
               Stack(
-                clipBehavior: Clip.none,
+                // clipBehavior: Clip.none,
                 children: [
                   Container(
                     width: 50,
                     height: 50,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF2C4B77) ,
+                      color: const Color(0xFF2C4B77),
                       shape: BoxShape.circle,
                     ),
                     child: Center(
@@ -141,35 +231,35 @@ class _ChatCard extends StatelessWidget {
                     ),
                   ),
                   // Unread count badge on avatar
-                  if (hasUnread)
-                    Positioned(
-                      right: -4,
-                      top: -4,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: const BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                        ),
-                        constraints: const BoxConstraints(
-                          minWidth: 18,
-                          minHeight: 18,
-                        ),
-                        child: Center(
-                          child: Text(
-                            unreadCount > 99 ? '99+' : '$unreadCount',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+                  // if (hasUnread)
+                  //   Positioned(
+                  //     right: -4,
+                  //     top: -4,
+                  //     child: Container(
+                  //       padding: const EdgeInsets.symmetric(
+                  //         horizontal: 6,
+                  //         vertical: 2,
+                  //       ),
+                  //       decoration: const BoxDecoration(
+                  //         color: Colors.red,
+                  //         shape: BoxShape.circle,
+                  //       ),
+                  //       constraints: const BoxConstraints(
+                  //         minWidth: 18,
+                  //         minHeight: 18,
+                  //       ),
+                  //       child: Center(
+                  //         child: Text(
+                  //           unreadCount > 99 ? '99+' : '$unreadCount',
+                  //           style: const TextStyle(
+                  //             color: Colors.white,
+                  //             fontSize: 10,
+                  //             fontWeight: FontWeight.bold,
+                  //           ),
+                  //         ),
+                  //       ),
+                  //     ),
+                  //   ),
                 ],
               ),
               const SizedBox(width: 12),
@@ -186,8 +276,9 @@ class _ChatCard extends StatelessWidget {
                             otherUser?.name ?? 'Chat',
                             style: TextStyle(
                               fontSize: 16,
-                              fontWeight:
-                                  hasUnread ? FontWeight.bold : FontWeight.w600,
+                              fontWeight: hasUnread
+                                  ? FontWeight.bold
+                                  : FontWeight.w600,
                               color: const Color(0xFF212121),
                             ),
                             maxLines: 1,
@@ -200,17 +291,16 @@ class _ChatCard extends StatelessWidget {
                             padding: const EdgeInsets.only(left: 8),
                             child: Text(
                               DateFormat('HH:mm').format(
-                                _parseCreatedAt(
-                                  chat.latestMessage?.createdAt,
-                                )!,
+                                _parseCreatedAt(chat.latestMessage?.createdAt)!,
                               ),
                               style: TextStyle(
                                 fontSize: 12,
                                 color: hasUnread
                                     ? const Color(0xFF2C4B77)
                                     : const Color(0xFF757575),
-                                fontWeight:
-                                    hasUnread ? FontWeight.w600 : FontWeight.normal,
+                                fontWeight: hasUnread
+                                    ? FontWeight.w600
+                                    : FontWeight.normal,
                               ),
                             ),
                           ),
@@ -227,8 +317,9 @@ class _ChatCard extends StatelessWidget {
                               color: hasUnread
                                   ? const Color(0xFF212121)
                                   : const Color(0xFF757575),
-                              fontWeight:
-                                  hasUnread ? FontWeight.w500 : FontWeight.normal,
+                              fontWeight: hasUnread
+                                  ? FontWeight.w500
+                                  : FontWeight.normal,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -243,8 +334,10 @@ class _ChatCard extends StatelessWidget {
                               vertical: 4,
                             ),
                             decoration: const BoxDecoration(
-                              color: Color(0xFF2C4B77) ,
-                              borderRadius: BorderRadius.all(Radius.circular(12)),
+                              color: Color(0xFF2C4B77),
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(12),
+                              ),
                             ),
                             child: Text(
                               unreadCount > 99 ? '99+' : '$unreadCount',
@@ -267,5 +360,3 @@ class _ChatCard extends StatelessWidget {
     );
   }
 }
-
-

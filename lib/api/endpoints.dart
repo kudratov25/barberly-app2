@@ -18,7 +18,8 @@ class ApiEndpoints {
   static const String barbersSchedule = '$apiPrefix/barbers/schedule';
   static const String barbersStatus = '$apiPrefix/barbers/status';
   static const String barbersLocation = '$apiPrefix/barbers/location';
-  static String barberAvailableSlots(int barberId) => '$apiPrefix/barbers/$barberId/available-slots';
+  static String barberAvailableSlots(int barberId) =>
+      '$apiPrefix/barbers/$barberId/available-slots';
 
   // Shops endpoints
   static const String shops = '$apiPrefix/shops';
@@ -48,8 +49,11 @@ class ApiEndpoints {
   static const String chats = '$apiPrefix/chats';
   static String chat(int id) => '$chats/$id';
   static String chatMessages(int id) => '$chats/$id/messages';
-  static String chatMessage(int chatId, int messageId) => '$chats/$chatId/messages/$messageId';
+  static String chatMessage(int chatId, int messageId) =>
+      '$chats/$chatId/messages/$messageId';
   static String chatRead(int id) => '$chats/$id/read';
+
+  // m commit test
 
   // Ratings endpoints
   static const String ratings = '$apiPrefix/ratings';

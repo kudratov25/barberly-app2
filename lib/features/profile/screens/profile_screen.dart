@@ -37,7 +37,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Rasm yuklandi (Backend integratsiya qilinishi kerak)'),
+              content: Text(
+                'Rasm yuklandi (Backend integratsiya qilinishi kerak)',
+              ),
               backgroundColor: Colors.green,
             ),
           );
@@ -46,10 +48,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Xatolik: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Xatolik: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -60,6 +59,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       backgroundColor: cs.background,
+      appBar: AppBar(
+        title: const Text('Profile'),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
+      ),
       body: FutureBuilder(
         future: ref.read(authServiceProvider).getCurrentUser(),
         builder: (context, snapshot) {
@@ -77,69 +82,42 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
           return CustomScrollView(
             slivers: [
-              // App bar with gradient
-              SliverAppBar(
-                expandedHeight: 200,
-                pinned: true,
-                backgroundColor: const Color(0xFF2C4B77),
-                flexibleSpace: FlexibleSpaceBar(
-                  title: const Text(
-                    'Profile',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      shadows: [
-                        Shadow(
-                          offset: Offset(0, 1),
-                          blurRadius: 3,
-                          color: Colors.black45,
-                        ),
-                      ],
-                    ),
-                  ),
-                  background: Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Color(0xFF2C4B77) ,
-                          Color(0xFF4DA8FF),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
               // Profile info card
               SliverToBoxAdapter(
                 child: Container(
-                  margin: const EdgeInsets.all(16),
-                  padding: const EdgeInsets.all(20),
+                  margin: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 20,
+                  ),
                   decoration: BoxDecoration(
                     color: cs.surface,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
-                        blurRadius: 24,
-                        offset: const Offset(0, 8),
+                        color: Colors.black.withOpacity(0.04),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
                       ),
                     ],
                   ),
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       // Avatar with edit button
                       Stack(
                         children: [
                           Container(
-                            width: 100,
-                            height: 100,
+                            width: 72,
+                            height: 72,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               gradient: _selectedImage == null
                                   ? const LinearGradient(
-                                      colors: [Color(0xFF0A84FF), Color(0xFF4DA8FF)],
+                                      colors: [
+                                        Color(0xFF2C4B77),
+                                        Color(0xFF4DA8FF),
+                                      ],
                                     )
                                   : null,
                               image: _selectedImage != null
@@ -157,8 +135,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                           : 'U',
                                       style: const TextStyle(
                                         color: Colors.white,
-                                        fontSize: 40,
-                                        fontWeight: FontWeight.bold,
+                                        fontSize: 32,
+                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                   )
@@ -168,17 +146,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             bottom: 0,
                             right: 0,
                             child: Container(
-                              width: 32,
-                              height: 32,
+                              width: 28,
+                              height: 28,
                               decoration: const BoxDecoration(
-                                color: Color(0xFF0A84FF),
+                                color: Color(0xFF2C4B77),
                                 shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.white,
+                                    blurRadius: 2,
+                                    spreadRadius: 1,
+                                  ),
+                                ],
                               ),
                               child: IconButton(
                                 padding: EdgeInsets.zero,
                                 icon: const Icon(
                                   Icons.camera_alt,
-                                  size: 18,
+                                  size: 14,
                                   color: Colors.white,
                                 ),
                                 onPressed: _pickImage,
@@ -187,24 +172,28 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
+                      // Name and phone stacked vertically
                       Text(
                         user.name,
                         style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
                           color: cs.onSurface,
+                          letterSpacing: -0.3,
                         ),
+                        textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 4),
                       Text(
                         user.phone,
                         style: TextStyle(
-                          fontSize: 16,
-                          color: cs.onSurface.withOpacity(0.7),
+                          fontSize: 14,
+                          color: cs.onSurface.withOpacity(0.6),
+                          fontWeight: FontWeight.w400,
                         ),
+                        textAlign: TextAlign.center,
                       ),
-                      // Email removed from UI (backend no longer requires it)
                     ],
                   ),
                 ),
@@ -232,8 +221,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       final totalBookings = items.length;
                       final ordersCount = items.where((i) => i.isOrder).length;
                       final walkInCount = items.where((i) => i.isWalkIn).length;
-                      final totalSpent =
-                          items.fold<int>(0, (sum, item) => sum + item.price);
+                      final totalSpent = items.fold<int>(
+                        0,
+                        (sum, item) => sum + item.price,
+                      );
 
                       return Container(
                         padding: const EdgeInsets.all(16),
@@ -339,7 +330,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         subtitle: 'Get help and contact support',
                         onTap: () {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Help & Support coming soon')),
+                            const SnackBar(
+                              content: Text('Help & Support coming soon'),
+                            ),
                           );
                         },
                       ),
@@ -354,10 +347,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             context: context,
                             builder: (context) => AlertDialog(
                               title: const Text('Logout'),
-                              content: const Text('Are you sure you want to logout?'),
+                              content: const Text(
+                                'Are you sure you want to logout?',
+                              ),
                               actions: [
                                 TextButton(
-                                  onPressed: () => Navigator.pop(context, false),
+                                  onPressed: () =>
+                                      Navigator.pop(context, false),
                                   child: const Text('Cancel'),
                                 ),
                                 TextButton(
@@ -429,10 +425,7 @@ class _StatItem extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             label,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Color(0xFF6B7280),
-            ),
+            style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
             textAlign: TextAlign.center,
           ),
         ],
@@ -468,11 +461,7 @@ class _MenuTile extends StatelessWidget {
             color: (color ?? const Color(0xFF0A84FF)).withOpacity(0.1),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(
-            icon,
-            color: color ?? const Color(0xFF0A84FF),
-            size: 20,
-          ),
+          child: Icon(icon, color: color ?? const Color(0xFF0A84FF), size: 20),
         ),
         title: Text(
           title,
