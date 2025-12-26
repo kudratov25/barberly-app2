@@ -16,6 +16,8 @@ _$BarberImpl _$$BarberImplFromJson(Map<String, dynamic> json) => _$BarberImpl(
   scheduleStatus: json['schedule_status'] as String?,
   ratingAvg: (json['rating_avg'] as num?)?.toDouble(),
   distance: (json['distance'] as num?)?.toDouble(),
+  shopName: json['shop_name'] as String?,
+  shopBarbersCount: (json['shop_barbers_count'] as num?)?.toInt(),
   services: (json['services'] as List<dynamic>?)
       ?.map((e) => BarberService.fromJson(e as Map<String, dynamic>))
       .toList(),
@@ -36,6 +38,8 @@ Map<String, dynamic> _$$BarberImplToJson(_$BarberImpl instance) =>
       'schedule_status': instance.scheduleStatus,
       'rating_avg': instance.ratingAvg,
       'distance': instance.distance,
+      'shop_name': instance.shopName,
+      'shop_barbers_count': instance.shopBarbersCount,
       'services': instance.services,
       'schedules': instance.schedules,
       'last_active_at': instance.lastActiveAt,

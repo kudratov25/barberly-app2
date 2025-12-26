@@ -44,12 +44,12 @@ class ShopService {
 
   Map<String, dynamic> _normalizeShopJson(Map<String, dynamic> json) {
     final normalized = Map<String, dynamic>.from(json);
-    
+
     // Handle null address
     if (normalized.containsKey('address') && normalized['address'] == null) {
       normalized['address'] = 'Manzil ko\'rsatilmagan'; // Default value
     }
-    
+
     if (normalized.containsKey('location_lat')) {
       normalized['location_lat'] = _toDouble(normalized['location_lat']);
     }
@@ -66,7 +66,8 @@ class ShopService {
         planMap['price'] = _toInt(planMap['price']);
       }
       // Some backends use price_monthly instead of price
-      if (!planMap.containsKey('price') && planMap.containsKey('price_monthly')) {
+      if (!planMap.containsKey('price') &&
+          planMap.containsKey('price_monthly')) {
         planMap['price'] = _toInt(planMap['price_monthly']);
       }
       normalized['subscription_plan'] = planMap;
@@ -174,6 +175,7 @@ class ShopService {
     double? lng,
     double? radius,
     String? status,
+    String? search,
     int? perPage,
   }) async {
     try {
@@ -182,6 +184,9 @@ class ShopService {
       if (lng != null) queryParams['lng'] = lng;
       if (radius != null) queryParams['radius'] = radius;
       if (status != null) queryParams['status'] = status;
+      if (search != null && search.isNotEmpty) {
+        queryParams['search'] = search;
+      }
       if (perPage != null) queryParams['per_page'] = perPage;
 
       final response = await _apiClient.dio.get(
@@ -191,9 +196,8 @@ class ShopService {
 
       return PaginatedResponse<Shop>.fromJson(
         response.data['data'],
-        (json) => Shop.fromJson(
-          _normalizeShopJson(json as Map<String, dynamic>),
-        ),
+        (json) =>
+            Shop.fromJson(_normalizeShopJson(json as Map<String, dynamic>)),
       );
     } on DioException catch (e) {
       throw _handleError(e);
@@ -205,9 +209,7 @@ class ShopService {
     try {
       final response = await _apiClient.dio.get(ApiEndpoints.shop(id));
       return Shop.fromJson(
-        _normalizeShopJson(
-          response.data['data'] as Map<String, dynamic>,
-        ),
+        _normalizeShopJson(response.data['data'] as Map<String, dynamic>),
       );
     } on DioException catch (e) {
       throw _handleError(e);
@@ -246,9 +248,11 @@ class ShopService {
       );
 
       return (response.data['data'] as List)
-          .map((json) => Barber.fromJson(
-                _normalizeBarberJson(json as Map<String, dynamic>),
-              ))
+          .map(
+            (json) => Barber.fromJson(
+              _normalizeBarberJson(json as Map<String, dynamic>),
+            ),
+          )
           .toList();
     } on DioException catch (e) {
       throw _handleError(e);
@@ -292,4 +296,3 @@ class PaginatedResponse<T> {
     );
   }
 }
-

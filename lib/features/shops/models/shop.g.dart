@@ -41,6 +41,7 @@ _$ShopImpl _$$ShopImplFromJson(Map<String, dynamic> json) => _$ShopImpl(
   status: json['status'] as String,
   locationLat: (json['location_lat'] as num?)?.toDouble(),
   locationLng: (json['location_lng'] as num?)?.toDouble(),
+  barbersCount: (json['barbers_count'] as num?)?.toInt(),
   owner: json['owner'] == null
       ? null
       : ShopOwner.fromJson(json['owner'] as Map<String, dynamic>),
@@ -66,6 +67,7 @@ Map<String, dynamic> _$$ShopImplToJson(_$ShopImpl instance) =>
       'status': instance.status,
       'location_lat': instance.locationLat,
       'location_lng': instance.locationLng,
+      'barbers_count': instance.barbersCount,
       'owner': instance.owner,
       'subscription_plan': instance.subscriptionPlan,
       'services': instance.services,

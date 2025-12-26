@@ -26,14 +26,18 @@ class _ShopsListScreenState extends ConsumerState<ShopsListScreen> {
     _loadShops();
   }
 
-  Future<void> _loadShops() async {
+  Future<void> _loadShops({String? searchQuery}) async {
     setState(() {
       _isLoading = true;
       _error = null;
     });
 
     try {
-      final response = await ref.read(shopServiceProvider).listShops();
+      final response = await ref
+          .read(shopServiceProvider)
+          .listShops(
+            search: searchQuery?.isNotEmpty == true ? searchQuery : null,
+          );
       setState(() {
         _shops = response.data;
         _filteredShops = response.data;
@@ -48,23 +52,8 @@ class _ShopsListScreenState extends ConsumerState<ShopsListScreen> {
   }
 
   void _filterShops(String query) {
-    if (query.isEmpty) {
-      setState(() {
-        _filteredShops = _shops;
-      });
-      return;
-    }
-
-    setState(() {
-      _filteredShops = _shops
-          ?.where(
-            (shop) =>
-                shop.name.toLowerCase().contains(query.toLowerCase()) ||
-                (shop.address?.toLowerCase().contains(query.toLowerCase()) ??
-                    false),
-          )
-          .toList();
-    });
+    // Backend search ishlatish
+    _loadShops(searchQuery: query.isEmpty ? null : query);
   }
 
   @override
@@ -234,7 +223,7 @@ class _ShopCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '${shop.workers?.length ?? 0} barbers',
+                          '${shop.barbersCount ?? shop.workers?.length ?? 0} barber${(shop.barbersCount ?? shop.workers?.length ?? 0) != 1 ? 's' : ''}',
                           style: const TextStyle(
                             fontSize: 13,
                             color: Color(0xFF757575),

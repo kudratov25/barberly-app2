@@ -28,16 +28,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     _loadData();
   }
 
-  Future<void> _loadData() async {
+  Future<void> _loadData({String? searchQuery}) async {
     try {
-      // Get user location (you would use geolocator package in production)
-      // For now, using sample coordinates
-      const lat = 41.2995;
-      const lng = 69.2401;
+      List<Barber> barbers;
 
-      final barbers = await ref
-          .read(barberServiceProvider)
-          .getNearestBarbers(lat: lat, lng: lng);
+      if (searchQuery != null && searchQuery.isNotEmpty) {
+        // Search rejimida (lat/lngsiz)
+        barbers = await ref
+            .read(barberServiceProvider)
+            .searchBarbers(searchQuery);
+      } else {
+        // Nearby rejimida (lat/lng bilan)
+        // Get user location (you would use geolocator package in production)
+        // For now, using sample coordinates
+        const lat = 41.2995;
+        const lng = 69.2401;
+
+        barbers = await ref
+            .read(barberServiceProvider)
+            .getNearestBarbers(lat: lat, lng: lng);
+      }
 
       setState(() {
         _barbers = barbers;
@@ -74,6 +84,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       const SizedBox(height: 20),
                       _QuickActionsRow(),
                       const SizedBox(height: 24),
+                      // Search bar
+                      // TextField(
+                      //   controller: _searchController,
+                      //   onChanged: (query) {
+                      //     _loadData(searchQuery: query);
+                      //   },
+                      //   decoration: InputDecoration(
+                      //     hintText: 'Search barbers or shops...',
+                      //     prefixIcon: const Icon(Icons.search),
+                      //     suffixIcon: _searchController.text.isNotEmpty
+                      //         ? IconButton(
+                      //             icon: const Icon(Icons.clear),
+                      //             onPressed: () {
+                      //               _searchController.clear();
+                      //               _loadData();
+                      //             },
+                      //           )
+                      //         : null,
+                      //     filled: true,
+                      //     fillColor: Colors.white,
+                      //     border: OutlineInputBorder(
+                      //       borderRadius: BorderRadius.circular(30),
+                      //       borderSide: BorderSide.none,
+                      //     ),
+                      //     contentPadding: const EdgeInsets.symmetric(
+                      //       horizontal: 20,
+                      //       vertical: 12,
+                      //     ),
+                      //   ),
+                      // ),
+                      // const SizedBox(height: 16),
                     ],
                   ),
                 ),
@@ -100,7 +141,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
               SliverToBoxAdapter(
                 child: SizedBox(
-                  height: 190,
+                  height: 200,
                   child: _isLoading
                       ? const Center(child: CircularProgressIndicator())
                       : _error != null
@@ -184,8 +225,10 @@ class _BarberHorizontalCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
                     width: 48,
@@ -202,6 +245,7 @@ class _BarberHorizontalCard extends StatelessWidget {
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
                           barber.name,
@@ -213,7 +257,32 @@ class _BarberHorizontalCard extends StatelessWidget {
                             color: Color(0xFF212121),
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 3),
+                        // Shop name
+                        if (barber.shopName != null) ...[
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.store,
+                                size: 12,
+                                color: Color(0xFF757575),
+                              ),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  barber.shopName!,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: Color(0xFF757575),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 3),
+                        ],
                         Row(
                           children: [
                             if (barber.ratingAvg != null) ...[
@@ -235,7 +304,7 @@ class _BarberHorizontalCard extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 8,
-                                vertical: 3,
+                                vertical: 2,
                               ),
                               decoration: BoxDecoration(
                                 color: barber.scheduleStatus == 'online'
@@ -248,7 +317,7 @@ class _BarberHorizontalCard extends StatelessWidget {
                                     ? 'Online'
                                     : 'Offline',
                                 style: TextStyle(
-                                  fontSize: 11,
+                                  fontSize: 10,
                                   fontWeight: FontWeight.w500,
                                   color: barber.scheduleStatus == 'online'
                                       ? Colors.green[700]
@@ -258,6 +327,28 @@ class _BarberHorizontalCard extends StatelessWidget {
                             ),
                           ],
                         ),
+                        // Shop barbers count
+                        // if (barber.shopBarbersCount != null &&
+                        //     barber.shopBarbersCount! > 0) ...[
+                        //   const SizedBox(height: 4),
+                        //   Row(
+                        //     children: [
+                        //       const Icon(
+                        //         Icons.people,
+                        //         size: 12,
+                        //         color: Color(0xFF757575),
+                        //       ),
+                        //       const SizedBox(width: 4),
+                        //       Text(
+                        //         '${barber.shopBarbersCount} barber${barber.shopBarbersCount != 1 ? 's' : ''} in shop',
+                        //         style: const TextStyle(
+                        //           fontSize: 11,
+                        //           color: Color(0xFF757575),
+                        //         ),
+                        //       ),
+                        //     ],
+                        //   ),
+                        // ],
                       ],
                     ),
                   ),

@@ -137,11 +137,20 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
       });
 
       // If messages already loaded, re-check whether we need to prompt for rating.
-      _checkForRatingRequests(_messages);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _messages.isNotEmpty) {
+          _checkForRatingRequests(_messages);
+        }
+      });
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _ratedOrdersLoaded = true; // avoid blocking prompts forever
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _messages.isNotEmpty) {
+          _checkForRatingRequests(_messages);
+        }
       });
     }
   }
@@ -176,16 +185,56 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
   }
 
   void _checkForRatingRequests(List<ChatMessage> messages) {
-    if (!_ratedOrdersLoaded) return;
-    if (_isRatingDialogOpen) return;
-    for (final msg in messages) {
+    if (!_ratedOrdersLoaded) {
+      print('Rating check skipped: rated orders not loaded yet');
+      return;
+    }
+    if (_isRatingDialogOpen) {
+      print('Rating check skipped: dialog already open');
+      return;
+    }
+
+    if (messages.isEmpty) return;
+
+    // Check messages in reverse order (newest first) to show most recent rating request
+    final reversedMessages = messages.reversed.toList();
+
+    for (final msg in reversedMessages) {
+      // Check if message has orderId (regardless of messageType)
+      if (msg.orderId == null) {
+        continue;
+      }
+
+      // Check if already rated
+      if (_ratedOrders.contains(msg.orderId)) {
+        continue;
+      }
+
+      // Check if message contains rating-related or completion keywords
       final text = msg.message.toLowerCase();
-      if (msg.messageType == 'system' &&
-          msg.orderId != null &&
-          text.contains('baho') &&
-          !_ratedOrders.contains(msg.orderId)) {
-        Future.delayed(const Duration(milliseconds: 300), () {
-          if (mounted) _showRatingDialog(msg.orderId!);
+      final hasRatingKeywords =
+          text.contains('baho') ||
+          text.contains('rating') ||
+          text.contains('baholash') ||
+          text.contains('yulduz') ||
+          text.contains('star') ||
+          text.contains('xizmat yakunlandi') ||
+          text.contains('service completed') ||
+          text.contains('xizmat tugadi') ||
+          text.contains('yakunlandi') ||
+          text.contains('completed') ||
+          text.contains('tugadi') ||
+          text.contains('rahmat');
+
+      if (hasRatingKeywords) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          if (mounted &&
+              !_isRatingDialogOpen &&
+              !_ratedOrders.contains(msg.orderId!) &&
+              _ratedOrdersLoaded) {
+            _showRatingDialog(msg.orderId!);
+          }
         });
         break; // only show one dialog at a time
       }
@@ -261,12 +310,22 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
             _messagesError = null;
           });
 
-          // Check for rating request messages on first load
-          _checkForRatingRequests(newMessages);
-
           // Auto-scroll to bottom on first load
           _scrollToBottom(smooth: false);
           _hasScrolledToBottom = true;
+
+          // Check for rating request messages after frame so ratedOrdersLoaded is considered
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && _ratedOrdersLoaded) {
+              _checkForRatingRequests(_messages);
+            } else if (mounted) {
+              Future.delayed(const Duration(milliseconds: 400), () {
+                if (mounted && _ratedOrdersLoaded) {
+                  _checkForRatingRequests(_messages);
+                }
+              });
+            }
+          });
         }
         return;
       }
@@ -321,8 +380,12 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
           _messagesError = null;
         });
 
-        // Check for rating request messages
-        _checkForRatingRequests(newMessagesToAdd);
+        // Check for rating request messages in all messages
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _ratedOrdersLoaded) {
+            _checkForRatingRequests(_messages);
+          }
+        });
 
         // Auto-scroll to bottom if user was at bottom or on first load
         if (wasAtBottom || !_hasScrolledToBottom) {
@@ -399,9 +462,12 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
     }
   }
 
-  /// Show rating dialog for completed order
+  // Legacy implementation kept for reference:
+  // Future<void> _showRatingDialog(int orderId) async { ... }
+
+  /// New simplified rating dialog (stable layout, no overlay hang)
   Future<void> _showRatingDialog(int orderId) async {
-    // Don't show if already rated
+    if (!mounted) return;
     if (_ratedOrders.contains(orderId)) return;
     if (_isRatingDialogOpen) return;
     _isRatingDialogOpen = true;
@@ -409,267 +475,309 @@ class _ChatMessagesScreenState extends ConsumerState<ChatMessagesScreen> {
     int? selectedRating;
     bool isLoading = false;
 
-    await showDialog<Map<String, dynamic>>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          insetPadding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 24,
-          ),
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.star, color: Colors.amber, size: 28),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  'Baho bering',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
+    try {
+      await showDialog<Map<String, dynamic>>(
+        context: context,
+        useRootNavigator: true,
+        barrierDismissible: false,
+        barrierColor: Colors.black54,
+        builder: (dialogContext) => StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Dialog(
+              insetPadding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 24,
               ),
-            ],
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Xizmat qanday bo\'ldi?',
-                  style: TextStyle(fontSize: 15, color: Color(0xFF757575)),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-                // 5 yulduzcha - responsive
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final maxWidth = constraints.maxWidth;
-                    final starSize = maxWidth < 300 ? 36.0 : 42.0;
-                    final starPadding = maxWidth < 300 ? 4.0 : 6.0;
-
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: List.generate(5, (index) {
-                        final rating = index + 1;
-                        final isSelected =
-                            selectedRating != null && rating <= selectedRating!;
-                        return GestureDetector(
-                          onTap: isLoading
-                              ? null
-                              : () {
-                                  setDialogState(() {
-                                    selectedRating = rating;
-                                  });
-                                },
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: starPadding,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+              backgroundColor: Colors.white,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minWidth: 260, maxWidth: 360),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 14),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 6,
+                          horizontal: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2C4B77).withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(
+                              Icons.star_rounded,
+                              color: Colors.amber,
+                              size: 26,
                             ),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              child: Icon(
-                                isSelected ? Icons.star : Icons.star_border,
-                                size: starSize,
-                                color: isSelected
-                                    ? Colors.amber
-                                    : Colors.grey.shade300,
+                            SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                'Baho bering',
+                                style: TextStyle(
+                                  fontSize: 19,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF1E2D4B),
+                                ),
+                                textAlign: TextAlign.center,
                               ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      const Text(
+                        'Xizmat qanday bo\'ldi?',
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: Color(0xFF4A4A4A),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final maxWidth = constraints.maxWidth;
+                          final starPadding = maxWidth < 320 ? 6.0 : 8.0;
+                          final availableForStars =
+                              maxWidth - (starPadding * 2 * 5);
+                          final computedSize = availableForStars / 5;
+                          final starSize = computedSize.clamp(28.0, 40.0);
+                          return Wrap(
+                            alignment: WrapAlignment.center,
+                            spacing: starPadding,
+                            runSpacing: starPadding / 2,
+                            children: List.generate(5, (index) {
+                              final rating = index + 1;
+                              final isSelected =
+                                  selectedRating != null &&
+                                  rating <= selectedRating!;
+                              return GestureDetector(
+                                onTap: isLoading
+                                    ? null
+                                    : () {
+                                        setDialogState(() {
+                                          selectedRating = rating;
+                                        });
+                                      },
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 140),
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: isSelected
+                                        ? Colors.amber.withOpacity(0.16)
+                                        : Colors.grey.shade200,
+                                  ),
+                                  child: Icon(
+                                    isSelected
+                                        ? Icons.star_rounded
+                                        : Icons.star_border_rounded,
+                                    size: starSize,
+                                    color: isSelected
+                                        ? Colors.amber
+                                        : Colors.grey.shade400,
+                                  ),
+                                ),
+                              );
+                            }),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 14),
+                      if (selectedRating != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            selectedRating == 5
+                                ? 'Ajoyib! ⭐⭐⭐⭐⭐'
+                                : selectedRating == 4
+                                ? 'Yaxshi! ⭐⭐⭐⭐'
+                                : selectedRating == 3
+                                ? 'Yaxshi ⭐⭐⭐'
+                                : selectedRating == 2
+                                ? 'O\'rtacha ⭐⭐'
+                                : 'Yomon ⭐',
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.amber,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      const SizedBox(height: 18),
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: 10,
+                        runSpacing: 8,
+                        children: [
+                          TextButton(
+                            onPressed: isLoading
+                                ? null
+                                : () {
+                                    Navigator.pop(dialogContext, {
+                                      'success': false,
+                                    });
+                                  },
+                            child: const Text(
+                              'Keyinroq',
+                              style: TextStyle(color: Color(0xFF757575)),
                             ),
                           ),
-                        );
-                      }),
-                    );
-                  },
-                ),
-                const SizedBox(height: 16),
-                // Rating text
-                if (selectedRating != null)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.amber.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      selectedRating == 5
-                          ? 'Ajoyib! ⭐⭐⭐⭐⭐'
-                          : selectedRating == 4
-                          ? 'Yaxshi! ⭐⭐⭐⭐'
-                          : selectedRating == 3
-                          ? 'Yaxshi ⭐⭐⭐'
-                          : selectedRating == 2
-                          ? 'O\'rtacha ⭐⭐'
-                          : 'Yomon ⭐',
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.amber,
+                          ElevatedButton(
+                            onPressed: (selectedRating != null && !isLoading)
+                                ? () async {
+                                    setDialogState(() {
+                                      isLoading = true;
+                                    });
+                                    try {
+                                      await ref
+                                          .read(ratingServiceProvider)
+                                          .createRating(
+                                            orderId: orderId,
+                                            rating: selectedRating!,
+                                          );
+                                      if (mounted) {
+                                        setState(() {
+                                          _ratedOrders.add(orderId);
+                                          _orderRatings[orderId] =
+                                              selectedRating!;
+                                        });
+                                        await Storage.addRatedOrder(orderId);
+                                        await Storage.saveOrderRating(
+                                          orderId: orderId,
+                                          rating: selectedRating!,
+                                        );
+                                        Navigator.pop(dialogContext, {
+                                          'success': true,
+                                          'rating': selectedRating,
+                                        });
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Row(
+                                              children: [
+                                                const Icon(
+                                                  Icons.check_circle,
+                                                  color: Colors.white,
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  'Baho yuborildi! $selectedRating yulduz ⭐',
+                                                ),
+                                              ],
+                                            ),
+                                            backgroundColor: Colors.green,
+                                            behavior: SnackBarBehavior.floating,
+                                          ),
+                                        );
+                                      }
+                                    } catch (e) {
+                                      final msg = e.toString().toLowerCase();
+                                      final alreadyRated =
+                                          msg.contains('already been rated') ||
+                                          msg.contains('already rated') ||
+                                          msg.contains('allaqachon baholangan');
+                                      if (alreadyRated) {
+                                        if (mounted) {
+                                          setState(() {
+                                            _ratedOrders.add(orderId);
+                                          });
+                                          await Storage.addRatedOrder(orderId);
+                                          Navigator.pop(dialogContext, {
+                                            'success': false,
+                                          });
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'Bu buyurtma allaqachon baholangan.',
+                                              ),
+                                              backgroundColor: Colors.blueGrey,
+                                            ),
+                                          );
+                                        }
+                                        return;
+                                      }
+                                      setDialogState(() {
+                                        isLoading = false;
+                                      });
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text('Xatolik: $e'),
+                                            backgroundColor: Colors.red,
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  }
+                                : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: selectedRating != null
+                                  ? const Color(0xFF2C4B77)
+                                  : Colors.grey.shade300,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 18,
+                                vertical: 12,
+                              ),
+                              minimumSize: const Size(0, 40),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: isLoading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white,
+                                      ),
+                                    ),
+                                  )
+                                : const Text(
+                                    'Yuborish',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                          ),
+                        ],
                       ),
-                      textAlign: TextAlign.center,
-                    ),
+                    ],
                   ),
-              ],
-            ),
-          ),
-          actions: [
-            // Keyinroq tugmasi
-            TextButton(
-              onPressed: isLoading
-                  ? null
-                  : () {
-                      Navigator.pop(dialogContext, {'success': false});
-                    },
-              child: const Text(
-                'Keyinroq',
-                style: TextStyle(color: Color(0xFF757575)),
-              ),
-            ),
-            // Yuborish tugmasi
-            ElevatedButton(
-              onPressed: (selectedRating != null && !isLoading)
-                  ? () async {
-                      setDialogState(() {
-                        isLoading = true;
-                      });
-
-                      try {
-                        await ref
-                            .read(ratingServiceProvider)
-                            .createRating(
-                              orderId: orderId,
-                              rating: selectedRating!,
-                            );
-
-                        if (mounted) {
-                          setState(() {
-                            _ratedOrders.add(orderId);
-                            _orderRatings[orderId] = selectedRating!;
-                          });
-                          await Storage.addRatedOrder(orderId);
-                          await Storage.saveOrderRating(
-                            orderId: orderId,
-                            rating: selectedRating!,
-                          );
-
-                          Navigator.pop(dialogContext, {
-                            'success': true,
-                            'rating': selectedRating,
-                          });
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.check_circle,
-                                    color: Colors.white,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Baho yuborildi! ${selectedRating} yulduz ⭐',
-                                  ),
-                                ],
-                              ),
-                              backgroundColor: Colors.green,
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
-                        }
-                      } catch (e) {
-                        final msg = e.toString().toLowerCase();
-                        final alreadyRated =
-                            msg.contains('already been rated') ||
-                            msg.contains('already rated') ||
-                            msg.contains('allaqachon baholangan') ||
-                            msg.contains('allaqachon baholangan');
-
-                        if (alreadyRated) {
-                          if (mounted) {
-                            setState(() {
-                              _ratedOrders.add(orderId);
-                            });
-                            await Storage.addRatedOrder(orderId);
-                            Navigator.pop(dialogContext, {'success': false});
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Bu buyurtma allaqachon baholangan.',
-                                ),
-                                backgroundColor: Colors.blueGrey,
-                              ),
-                            );
-                          }
-                          return;
-                        }
-
-                        setDialogState(() {
-                          isLoading = false;
-                        });
-
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Xatolik: $e'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                        }
-                      }
-                    }
-                  : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: selectedRating != null
-                    ? const Color(0xFF2C4B77)
-                    : Colors.grey.shade300,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
-                ),
-                minimumSize: const Size(0, 40),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: isLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : const Text(
-                      'Yuborish',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-            ),
-          ],
-          actionsAlignment: MainAxisAlignment.center,
-          actionsOverflowButtonSpacing: 8,
+            );
+          },
         ),
-      ),
-    );
-
-    // Dialog yopilganda hech narsa qilmaymiz, chunki rating allaqachon yuborilgan
-    _isRatingDialogOpen = false;
+      );
+    } finally {
+      _isRatingDialogOpen = false;
+    }
   }
 
   Future<void> _deleteMessage(ChatMessage message) async {

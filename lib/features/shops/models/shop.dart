@@ -37,6 +37,7 @@ class Shop with _$Shop {
     required String status,
     @JsonKey(name: 'location_lat') double? locationLat,
     @JsonKey(name: 'location_lng') double? locationLng,
+    @JsonKey(name: 'barbers_count') int? barbersCount,
     ShopOwner? owner,
     @JsonKey(name: 'subscription_plan') SubscriptionPlan? subscriptionPlan,
     List<ShopService>? services,

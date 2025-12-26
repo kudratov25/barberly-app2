@@ -163,7 +163,13 @@ class _ChatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final otherUser = chat.users.isNotEmpty ? chat.users.first : null;
+    // Barber'ni topish: chat.users dan currentUserId bo'lmagan user'ni olish
+    final otherUser = chat.users.firstWhere(
+      (user) => currentUserId == null || user.id != currentUserId,
+      orElse: () => chat.users.isNotEmpty
+          ? chat.users.first
+          : const ChatUser(id: 0, name: 'Chat'),
+    );
 
     // Faqat barber yuborgan o'qilmagan habarlar uchun belgi ko'rsatish
     // Agar latest message foydalanuvchi tomonidan yuborilgan bo'lsa, belgi ko'rsatilmaydi
@@ -221,7 +227,9 @@ class _ChatCard extends StatelessWidget {
                     ),
                     child: Center(
                       child: Text(
-                        otherUser?.name[0].toUpperCase() ?? 'U',
+                        otherUser.name.isNotEmpty
+                            ? otherUser.name[0].toUpperCase()
+                            : 'U',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 20,
@@ -273,7 +281,7 @@ class _ChatCard extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            otherUser?.name ?? 'Chat',
+                            otherUser.name,
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: hasUnread
