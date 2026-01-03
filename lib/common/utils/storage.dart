@@ -6,6 +6,7 @@ class Storage {
   static const String _ratedOrdersKey = 'rated_orders';
   static const String _orderRatingsKey = 'order_ratings'; // ["123=5", "124=4"]
   static const String _themeModeKey = 'theme_mode'; // system | light | dark
+  static const String _seenWalkInCountKey = 'seen_walkin_count';
 
   /// Save authentication token
   static Future<void> saveToken(String token) async {
@@ -105,6 +106,18 @@ class Storage {
     }
 
     return out;
+  }
+
+  /// Get last seen walk-in count (used to show unread badge on Home)
+  static Future<int> getSeenWalkInCount() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_seenWalkInCountKey) ?? 0;
+  }
+
+  /// Save last seen walk-in count
+  static Future<void> saveSeenWalkInCount(int count) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_seenWalkInCountKey, count);
   }
 }
 

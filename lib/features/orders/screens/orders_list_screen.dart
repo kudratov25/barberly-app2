@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/common/providers/providers.dart';
+import 'package:mobile/common/utils/storage.dart';
 import 'package:mobile/common/widgets/bottom_nav_bar.dart';
 import 'package:mobile/features/orders/models/client_timeline_item.dart';
 import 'package:mobile/features/orders/models/order.dart';
@@ -22,6 +23,7 @@ class _OrdersListScreenState extends ConsumerState<OrdersListScreen>
   bool _isInitialized = false;
   bool _hasItems = false;
   DateTime? _lastRefreshTime;
+  int? _lastSyncedWalkInCount;
 
   @override
   void initState() {
@@ -248,6 +250,16 @@ class _OrdersListScreenState extends ConsumerState<OrdersListScreen>
 
           final items = snapshot.data!.data;
 
+          // Mark all current walk-ins as "seen" whenever user views the bookings screen.
+          // This ensures Home badge resets even when navigating here via BottomNavBar.
+          final walkInCount = items.where((i) => i.isWalkIn).length;
+          if (_lastSyncedWalkInCount != walkInCount) {
+            _lastSyncedWalkInCount = walkInCount;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              Storage.saveSeenWalkInCount(walkInCount);
+            });
+          }
+
           // Update hasItems flag
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
@@ -335,7 +347,7 @@ class _OrderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    DateTime? _parseStartTime() {
+    DateTime? parseStartTime() {
       try {
         return DateTime.parse(order.startTime);
       } catch (_) {
@@ -343,7 +355,7 @@ class _OrderCard extends StatelessWidget {
       }
     }
 
-    final startDateTime = _parseStartTime();
+    final startDateTime = parseStartTime();
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),

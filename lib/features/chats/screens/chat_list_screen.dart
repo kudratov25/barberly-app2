@@ -196,7 +196,7 @@ class _ChatCard extends StatelessWidget {
     }
     final hasUnread = unreadCount > 0;
 
-    DateTime? _parseCreatedAt(String? value) {
+    DateTime? parseCreatedAt(String? value) {
       if (value == null || value.isEmpty) return null;
       try {
         return DateTime.parse(value);
@@ -293,13 +293,13 @@ class _ChatCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (_parseCreatedAt(chat.latestMessage?.createdAt) !=
+                        if (parseCreatedAt(chat.latestMessage?.createdAt) !=
                             null)
                           Padding(
                             padding: const EdgeInsets.only(left: 8),
                             child: Text(
                               DateFormat('HH:mm').format(
-                                _parseCreatedAt(chat.latestMessage?.createdAt)!,
+                                parseCreatedAt(chat.latestMessage?.createdAt)!,
                               ),
                               style: TextStyle(
                                 fontSize: 12,

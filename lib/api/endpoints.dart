@@ -15,6 +15,7 @@ class ApiEndpoints {
 
   // Barbers endpoints
   static const String barbersNearest = '$apiPrefix/barbers/nearest';
+  static String barber(int id) => '$apiPrefix/barbers/$id';
   static const String barbersSchedule = '$apiPrefix/barbers/schedule';
   static const String barbersStatus = '$apiPrefix/barbers/status';
   static const String barbersLocation = '$apiPrefix/barbers/location';

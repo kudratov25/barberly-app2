@@ -96,8 +96,7 @@ class BarberService {
   /// Get single barber by ID
   Future<Barber> getBarber(int id) async {
     try {
-      final response =
-          await _apiClient.dio.get('${ApiEndpoints.barbersNearest}/$id');
+      final response = await _apiClient.dio.get(ApiEndpoints.barber(id));
       return Barber.fromJson(
         _normalizeBarberJson(
           response.data['data'] as Map<String, dynamic>,

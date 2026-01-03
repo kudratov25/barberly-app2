@@ -58,7 +58,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: cs.background,
+      backgroundColor: cs.surface,
       appBar: AppBar(
         title: const Text('Profile'),
         backgroundColor: Colors.white,
@@ -266,7 +266,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   child: _StatItem(
                                     icon: Icons.payments,
                                     label: 'Total Spent',
-                                    value: '${totalSpent} UZS',
+                                    value: '$totalSpent UZS',
                                     color: const Color(0xFF10B981),
                                   ),
                                 ),

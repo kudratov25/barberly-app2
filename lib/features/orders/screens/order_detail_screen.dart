@@ -52,20 +52,23 @@ class OrderDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      body: FutureBuilder<Order>(
-        future: ref.read(orderServiceProvider).getOrder(orderId),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
+    return FutureBuilder<Order>(
+      future: ref.read(orderServiceProvider).getOrder(orderId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            backgroundColor: Color(0xFFF5F7FA),
+            body: Center(
               child: CircularProgressIndicator(
                 valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2C4B77)),
               ),
-            );
-          }
-          if (snapshot.hasError) {
-            return Center(
+            ),
+          );
+        }
+        if (snapshot.hasError) {
+          return Scaffold(
+            backgroundColor: const Color(0xFFF5F7FA),
+            body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -97,23 +100,29 @@ class OrderDetailScreen extends ConsumerWidget {
                   ),
                 ],
               ),
-            );
-          }
-          if (!snapshot.hasData) {
-            return const Center(
+            ),
+          );
+        }
+        if (!snapshot.hasData) {
+          return const Scaffold(
+            backgroundColor: Color(0xFFF5F7FA),
+            body: Center(
               child: Text(
                 'Bron topilmadi',
                 style: TextStyle(fontSize: 16, color: Color(0xFF757575)),
               ),
-            );
-          }
+            ),
+          );
+        }
 
-          final order = snapshot.data!;
-          final statusColor = _statusColor(order.status);
-          final start = _tryParse(order.startTime);
-          final end = _tryParse(order.endTime);
+        final order = snapshot.data!;
+        final statusColor = _statusColor(order.status);
+        final start = _tryParse(order.startTime);
+        final end = _tryParse(order.endTime);
 
-          return CustomScrollView(
+        return Scaffold(
+          backgroundColor: const Color(0xFFF5F7FA),
+          body: CustomScrollView(
             slivers: [
               SliverAppBar(
                 pinned: true,
@@ -347,14 +356,63 @@ class OrderDetailScreen extends ConsumerWidget {
                             ),
                           ),
                         ),
+                      const SizedBox(height: 90),
                     ],
                   ),
                 ),
               ),
             ],
-          );
-        },
-      ),
+          ),
+          bottomNavigationBar: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+              child: SizedBox(
+                height: 52,
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    try {
+                      final barber = await ref
+                          .read(barberServiceProvider)
+                          .getBarber(order.barberId);
+                      if (!context.mounted) return;
+                      context.push(
+                        '/barbers/${order.barberId}/book',
+                        extra: barber,
+                      );
+                    } catch (e) {
+                      if (!context.mounted) return;
+                      // Fallback navigation without extra
+                      try {
+                        context.push('/barbers/${order.barberId}/book');
+                      } catch (_) {}
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Barberni ochib bo‘lmadi: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.replay_outlined),
+                  label: const Text(
+                    'Book again',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2C4B77),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    elevation: 2,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

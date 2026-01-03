@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/common/providers/providers.dart';
+import 'package:mobile/common/routes/route_observer.dart';
+import 'package:mobile/common/utils/storage.dart';
 import 'package:mobile/common/widgets/bottom_nav_bar.dart';
 import 'package:mobile/features/barbers/models/barber.dart';
 import 'package:mobile/features/orders/models/client_timeline_item.dart';
@@ -16,7 +18,8 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with RouteAware, WidgetsBindingObserver {
   final TextEditingController _searchController = TextEditingController();
   List<Barber>? _barbers;
   bool _isLoading = true;
@@ -25,7 +28,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadData();
+  }
+
+  void _refreshHome() {
+    // Re-fetch user and reload home data when returning from another route
+    ref.invalidate(currentUserProvider);
+    _loadData();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null) appRouteObserver.subscribe(this, route);
+  }
+
+  @override
+  void didPopNext() {
+    // Returned to Home from another screen via Navigator.pop
+    _refreshHome();
+  }
+
+  @override
+  void didPush() {
+    // Home just became the active route (e.g., via BottomNavBar context.go('/home'))
+    _refreshHome();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refreshHome();
+    }
   }
 
   Future<void> _loadData({String? searchQuery}) async {
@@ -201,6 +237,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   void dispose() {
+    appRouteObserver.unsubscribe(this);
+    WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
     super.dispose();
   }
@@ -428,10 +466,11 @@ class _Header extends StatelessWidget {
                       user.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF111827),
+                        color: const Color(0xFF111827),
+                        letterSpacing: -0.3,
                       ),
                     ),
                     loading: () => const Text(
@@ -1143,15 +1182,24 @@ class _EmptyNextAppointmentCard extends StatelessWidget {
   }
 }
 
-class _QuickActionsRow extends ConsumerWidget {
+class _QuickActionsRow extends ConsumerStatefulWidget {
   const _QuickActionsRow();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_QuickActionsRow> createState() => _QuickActionsRowState();
+}
+
+class _QuickActionsRowState extends ConsumerState<_QuickActionsRow> {
+  @override
+  Widget build(BuildContext context) {
     return FutureBuilder<PaginatedResponse<ClientTimelineItem>>(
       future: ref.read(orderServiceProvider).listClientTimeline(perPage: 100),
       builder: (context, snapshot) {
-        final items = snapshot.hasData
+        final timelineReady =
+            snapshot.connectionState == ConnectionState.done &&
+            snapshot.hasData;
+
+        final items = timelineReady
             ? snapshot.data!.data
             : <ClientTimelineItem>[];
         final walkInCount = items.where((i) => i.isWalkIn).length;
@@ -1169,12 +1217,55 @@ class _QuickActionsRow extends ConsumerWidget {
               label: 'Nearby Shops',
               route: '/shops',
             ),
-            _QuickActionButton(
-              icon: Icons.calendar_today_outlined,
-              label: 'My Bookings',
-              route: '/orders',
-              badgeCount: walkInCount,
-              badgeLabel: 'W',
+            FutureBuilder<int>(
+              future: Storage.getSeenWalkInCount(),
+              builder: (context, seenSnapshot) {
+                var seen = seenSnapshot.data ?? 0;
+
+                // IMPORTANT:
+                // When timeline is still loading, `walkInCount` is 0 (items is empty).
+                // We must NOT sync local seen to 0 during loading, otherwise badge becomes wrong
+                // after data arrives.
+                if (timelineReady) {
+                  // If backend count decreased (reset), align local seen to backend
+                  if (walkInCount < seen) {
+                    seen = walkInCount;
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      Storage.saveSeenWalkInCount(walkInCount);
+                    });
+                  }
+                }
+
+                final unread = timelineReady ? (walkInCount - seen) : 0;
+                final badge = unread > 0 ? unread : 0;
+
+                return _QuickActionButton(
+                  icon: Icons.calendar_today_outlined,
+                  label: 'My Bookings',
+                  route: '/orders',
+                  badgeCount: badge,
+                  badgeLabel: 'W',
+                  onTap: () async {
+                    // Always use fresh backend count on tap (avoid using stale / loading snapshot)
+                    final timeline = await ref
+                        .read(orderServiceProvider)
+                        .listClientTimeline(perPage: 100);
+                    final currentWalkInCount = timeline.data
+                        .where((i) => i.isWalkIn)
+                        .length;
+
+                    // Mark all current walk-ins as "seen" when entering bookings
+                    await Storage.saveSeenWalkInCount(currentWalkInCount);
+
+                    // Go to orders and wait until user returns
+                    if (!context.mounted) return;
+                    await context.push('/orders');
+
+                    // Force rebuild so badge re-reads local seen count (becomes 0)
+                    if (mounted) setState(() {});
+                  },
+                );
+              },
             ),
           ],
         );
@@ -1189,6 +1280,7 @@ class _QuickActionButton extends StatelessWidget {
   final String route;
   final int? badgeCount;
   final String? badgeLabel;
+  final Future<void> Function()? onTap;
 
   const _QuickActionButton({
     required this.icon,
@@ -1196,6 +1288,7 @@ class _QuickActionButton extends StatelessWidget {
     required this.route,
     this.badgeCount,
     this.badgeLabel,
+    this.onTap,
   });
 
   @override
@@ -1204,7 +1297,13 @@ class _QuickActionButton extends StatelessWidget {
       child: Column(
         children: [
           GestureDetector(
-            onTap: () => context.push(route),
+            onTap: () async {
+              if (onTap != null) {
+                await onTap!();
+                return;
+              }
+              context.push(route);
+            },
             child: Stack(
               clipBehavior: Clip.none,
               children: [
@@ -1375,7 +1474,7 @@ class _StatsCard extends ConsumerWidget {
                 children: [
                   _StatsItem(label: 'Total orders', value: '$totalOrders'),
                   const SizedBox(width: 16),
-                  _StatsItem(label: 'Total spent', value: '${totalSpent} UZS'),
+                  _StatsItem(label: 'Total spent', value: '$totalSpent UZS'),
                   const SizedBox(width: 16),
                   _StatsItem(label: 'Services used', value: '$servicesUsed'),
                 ],
@@ -1474,6 +1573,6 @@ class _StatsRowLabelValue extends StatelessWidget {
 }
 
 // Provider for current user
-final currentUserProvider = FutureProvider((ref) async {
+final currentUserProvider = FutureProvider.autoDispose((ref) async {
   return await ref.read(authServiceProvider).getCurrentUser();
 });

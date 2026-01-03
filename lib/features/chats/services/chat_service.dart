@@ -9,7 +9,6 @@ class ChatService {
   final ApiClient _apiClient;
 
   ChatService(this._apiClient);
-
   /// List chats
   Future<List<Chat>> listChats() async {
     try {

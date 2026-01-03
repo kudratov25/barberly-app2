@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/common/routes/route_observer.dart';
 import 'package:mobile/common/utils/storage.dart';
 import 'package:mobile/features/auth/screens/login_screen.dart';
 import 'package:mobile/features/auth/screens/register_screen.dart';
@@ -31,6 +32,7 @@ import 'package:mobile/screens/splash_screen.dart';
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/splash',
+    observers: [appRouteObserver],
     redirect: (context, state) async {
       final isAuthenticated = await Storage.isAuthenticated();
       final isLoginRoute =
