@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/common/providers/providers.dart';
+import 'package:mobile/common/routes/route_observer.dart';
+import 'package:mobile/common/utils/storage.dart';
 import 'package:mobile/common/widgets/bottom_nav_bar.dart';
 import 'package:mobile/features/barbers/models/barber.dart';
 import 'package:mobile/features/orders/models/client_timeline_item.dart';
@@ -16,7 +18,8 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with RouteAware, WidgetsBindingObserver {
   final TextEditingController _searchController = TextEditingController();
   List<Barber>? _barbers;
   bool _isLoading = true;
@@ -25,20 +28,62 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadData();
   }
 
-  Future<void> _loadData() async {
-    try {
-      // Get user location (you would use geolocator package in production)
-      // For now, using sample coordinates
-      const lat = 41.2995;
-      const lng = 69.2401;
+  void _refreshHome() {
+    // Re-fetch user and reload home data when returning from another route
+    ref.invalidate(currentUserProvider);
+    _loadData();
+  }
 
-      final barbers = await ref.read(barberServiceProvider).getNearestBarbers(
-            lat: lat,
-            lng: lng,
-          );
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null) appRouteObserver.subscribe(this, route);
+  }
+
+  @override
+  void didPopNext() {
+    // Returned to Home from another screen via Navigator.pop
+    _refreshHome();
+  }
+
+  @override
+  void didPush() {
+    // Home just became the active route (e.g., via BottomNavBar context.go('/home'))
+    _refreshHome();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refreshHome();
+    }
+  }
+
+  Future<void> _loadData({String? searchQuery}) async {
+    try {
+      List<Barber> barbers;
+
+      if (searchQuery != null && searchQuery.isNotEmpty) {
+        // Search rejimida (lat/lngsiz)
+        barbers = await ref
+            .read(barberServiceProvider)
+            .searchBarbers(searchQuery);
+      } else {
+        // Nearby rejimida (lat/lng bilan)
+        // Get user location (you would use geolocator package in production)
+        // For now, using sample coordinates
+        const lat = 41.2995;
+        const lng = 69.2401;
+
+        barbers = await ref
+            .read(barberServiceProvider)
+            .getNearestBarbers(lat: lat, lng: lng);
+      }
 
       setState(() {
         _barbers = barbers;
@@ -75,6 +120,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       const SizedBox(height: 20),
                       _QuickActionsRow(),
                       const SizedBox(height: 24),
+                      // Search bar
+                      // TextField(
+                      //   controller: _searchController,
+                      //   onChanged: (query) {
+                      //     _loadData(searchQuery: query);
+                      //   },
+                      //   decoration: InputDecoration(
+                      //     hintText: 'Search barbers or shops...',
+                      //     prefixIcon: const Icon(Icons.search),
+                      //     suffixIcon: _searchController.text.isNotEmpty
+                      //         ? IconButton(
+                      //             icon: const Icon(Icons.clear),
+                      //             onPressed: () {
+                      //               _searchController.clear();
+                      //               _loadData();
+                      //             },
+                      //           )
+                      //         : null,
+                      //     filled: true,
+                      //     fillColor: Colors.white,
+                      //     border: OutlineInputBorder(
+                      //       borderRadius: BorderRadius.circular(30),
+                      //       borderSide: BorderSide.none,
+                      //     ),
+                      //     contentPadding: const EdgeInsets.symmetric(
+                      //       horizontal: 20,
+                      //       vertical: 12,
+                      //     ),
+                      //   ),
+                      // ),
+                      // const SizedBox(height: 16),
                     ],
                   ),
                 ),
@@ -89,11 +165,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     children: const [
                       Text(
                         'Popular Barbers',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF212121),
-                    ),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF212121),
+                        ),
                       ),
                     ],
                   ),
@@ -101,54 +177,53 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
               SliverToBoxAdapter(
                 child: SizedBox(
-                  height: 190,
+                  height: 200,
                   child: _isLoading
                       ? const Center(child: CircularProgressIndicator())
                       : _error != null
-                          ? Center(child: Text(_error!))
-                          : (_barbers == null || _barbers!.isEmpty)
-                              ? const Center(child: Text('No barbers found'))
-                              : Builder(
-                                  builder: (context) {
-                                    final popularBarbers = [..._barbers!]
-                                      ..sort(
-                                        (a, b) =>
-                                            (b.ratingAvg ?? 0).compareTo(
-                                          a.ratingAvg ?? 0,
-                                        ),
-                                      );
-                                    final count = popularBarbers.length > 10
-                                        ? 10
-                                        : popularBarbers.length;
+                      ? Center(child: Text(_error!))
+                      : (_barbers == null || _barbers!.isEmpty)
+                      ? const Center(child: Text('No barbers found'))
+                      : Builder(
+                          builder: (context) {
+                            final popularBarbers = [..._barbers!]
+                              ..sort(
+                                (a, b) => (b.ratingAvg ?? 0).compareTo(
+                                  a.ratingAvg ?? 0,
+                                ),
+                              );
+                            final count = popularBarbers.length > 10
+                                ? 10
+                                : popularBarbers.length;
 
-                                    return ListView.separated(
-                                      padding: const EdgeInsets.fromLTRB(
-                                        16,
-                                        12,
-                                        16,
-                                        24,
-                                      ),
-                                      scrollDirection: Axis.horizontal,
-                                      itemCount: count,
-                                      separatorBuilder: (_, __) =>
-                                          const SizedBox(width: 12),
-                                      itemBuilder: (context, index) {
-                                        final barber = popularBarbers[index];
-                                        return _BarberHorizontalCard(
-                                          barber: barber,
-                                        );
-                      },
-                                    );
-                                  },
-                    ),
-                  ),
+                            return ListView.separated(
+                              padding: const EdgeInsets.fromLTRB(
+                                16,
+                                12,
+                                16,
+                                24,
+                              ),
+                              scrollDirection: Axis.horizontal,
+                              itemCount: count,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(width: 12),
+                              itemBuilder: (context, index) {
+                                final barber = popularBarbers[index];
+                                return _BarberHorizontalCard(barber: barber);
+                              },
+                            );
+                          },
+                        ),
                 ),
+              ),
 
               // Stats section
               SliverToBoxAdapter(
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   child: const _StatsCard(),
                 ),
               ),
@@ -162,6 +237,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   void dispose() {
+    appRouteObserver.unsubscribe(this);
+    WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
     super.dispose();
   }
@@ -186,41 +263,72 @@ class _BarberHorizontalCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-              Container(
+                  Container(
                     width: 48,
                     height: 48,
                     decoration: const BoxDecoration(
                       shape: BoxShape.circle,
                       gradient: LinearGradient(
-                        colors: [Color(0xFF0A84FF), Color(0xFF4DA8FF)],
-                        ),
-                    ),
-                    child: const Icon(Icons.person, color: Colors.white),
-              ),
-                  const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      barber.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                            fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF212121),
+                        colors: [Color(0xFF2C4B77), Color(0xFF4DA8FF)],
                       ),
                     ),
-                    const SizedBox(height: 4),
-                      Row(
+                    child: const Icon(Icons.person, color: Colors.white),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
+                        Text(
+                          barber.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF212121),
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        // Shop name
+                        if (barber.shopName != null) ...[
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.store,
+                                size: 12,
+                                color: Color(0xFF757575),
+                              ),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  barber.shopName!,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: Color(0xFF757575),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 3),
+                        ],
+                        Row(
+                          children: [
                             if (barber.ratingAvg != null) ...[
-                              const Icon(Icons.star,
-                                  size: 14, color: Color(0xFFFFC107)),
+                              const Icon(
+                                Icons.star,
+                                size: 14,
+                                color: Color(0xFFFFC107),
+                              ),
                               const SizedBox(width: 4),
                               Text(
                                 barber.ratingAvg!.toStringAsFixed(1),
@@ -231,25 +339,25 @@ class _BarberHorizontalCard extends StatelessWidget {
                               ),
                             ],
                             const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                                vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: barber.scheduleStatus == 'online'
-                                ? Colors.green.shade50
-                                : Colors.grey.shade100,
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: barber.scheduleStatus == 'online'
+                                    ? Colors.green.shade50
+                                    : Colors.grey.shade100,
                                 borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(
+                              ),
+                              child: Text(
                                 barber.scheduleStatus == 'online'
                                     ? 'Online'
                                     : 'Offline',
-                            style: TextStyle(
-                                  fontSize: 11,
+                                style: TextStyle(
+                                  fontSize: 10,
                                   fontWeight: FontWeight.w500,
-                              color: barber.scheduleStatus == 'online'
+                                  color: barber.scheduleStatus == 'online'
                                       ? Colors.green[700]
                                       : Colors.grey[700],
                                 ),
@@ -257,6 +365,28 @@ class _BarberHorizontalCard extends StatelessWidget {
                             ),
                           ],
                         ),
+                        // Shop barbers count
+                        // if (barber.shopBarbersCount != null &&
+                        //     barber.shopBarbersCount! > 0) ...[
+                        //   const SizedBox(height: 4),
+                        //   Row(
+                        //     children: [
+                        //       const Icon(
+                        //         Icons.people,
+                        //         size: 12,
+                        //         color: Color(0xFF757575),
+                        //       ),
+                        //       const SizedBox(width: 4),
+                        //       Text(
+                        //         '${barber.shopBarbersCount} barber${barber.shopBarbersCount != 1 ? 's' : ''} in shop',
+                        //         style: const TextStyle(
+                        //           fontSize: 11,
+                        //           color: Color(0xFF757575),
+                        //         ),
+                        //       ),
+                        //     ],
+                        //   ),
+                        // ],
                       ],
                     ),
                   ),
@@ -266,11 +396,10 @@ class _BarberHorizontalCard extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () =>
-                      context.push('/barbers/${barber.id}/book'),
+                  onPressed: () => context.push('/barbers/${barber.id}/book'),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 10),
-                    backgroundColor: const Color(0xFF0A84FF),
+                    backgroundColor: const Color(0xFF2C4B77),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(999),
@@ -278,12 +407,9 @@ class _BarberHorizontalCard extends StatelessWidget {
                   ),
                   child: const Text(
                     'Book',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
+                ),
               ),
             ],
           ),
@@ -311,7 +437,7 @@ class _Header extends StatelessWidget {
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
-                  colors: [Color(0xFF0A84FF), Color(0xFF4DA8FF)],
+                  colors: [Color(0xFF2C4B77), Color(0xFF4DA8FF)],
                 ),
               ),
               child: userAsync.when(
@@ -326,8 +452,8 @@ class _Header extends StatelessWidget {
                   ),
                 ),
                 loading: () => const SizedBox(),
-                error: (_, __) => const Icon(Icons.person,
-                    color: Colors.white, size: 26),
+                error: (_, __) =>
+                    const Icon(Icons.person, color: Colors.white, size: 26),
               ),
             ),
             const SizedBox(width: 12),
@@ -340,10 +466,11 @@ class _Header extends StatelessWidget {
                       user.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF111827),
+                        color: const Color(0xFF111827),
+                        letterSpacing: -0.3,
                       ),
                     ),
                     loading: () => const Text(
@@ -366,18 +493,13 @@ class _Header extends StatelessWidget {
                   const SizedBox(height: 2),
                   const Text(
                     'Client',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF6B7280),
-                    ),
+                    style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
                   ),
                 ],
               ),
             ),
             FutureBuilder<PaginatedResponse<ClientTimelineItem>>(
-              future: ref
-                  .read(orderServiceProvider)
-                  .listClientTimeline(),
+              future: ref.read(orderServiceProvider).listClientTimeline(),
               builder: (context, snapshot) {
                 int newCount = 0;
                 if (snapshot.hasData) {
@@ -464,74 +586,150 @@ class _Header extends StatelessWidget {
 
             return Container(
               margin: const EdgeInsets.only(top: 12),
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF0A84FF).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: const Color(0xFF0A84FF).withOpacity(0.2),
-                  width: 1,
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF1E3A5F), Color(0xFF2C4B77)],
                 ),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.15),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF1E3A5F).withOpacity(0.4),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Row(
                 children: [
-                  const Icon(
-                    Icons.calendar_today,
-                    size: 18,
-                    color: Color(0xFF0A84FF),
+                  Container(
+                    padding: const EdgeInsets.all(11),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.18),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.25),
+                        width: 1.5,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.calendar_today,
+                      size: 20,
+                      color: Colors.white,
+                    ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           'Yaqin booking',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
-                            color: Color(0xFF6B7280),
-                            fontWeight: FontWeight.w500,
+                            color: Colors.white70,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.8,
                           ),
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 6),
                         Row(
                           children: [
                             if (startDateTime != null) ...[
-                              Text(
-                                '${startDateTime.day.toString().padLeft(2, '0')}.${startDateTime.month.toString().padLeft(2, '0')}.${startDateTime.year}',
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF111827),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 7,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.18),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.25),
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: Text(
+                                  '${startDateTime.day.toString().padLeft(2, '0')}.${startDateTime.month.toString().padLeft(2, '0')}.${startDateTime.year}',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                    letterSpacing: 0.3,
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              Text(
-                                '${startDateTime.hour.toString().padLeft(2, '0')}:${startDateTime.minute.toString().padLeft(2, '0')}',
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF111827),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 7,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.18),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.25),
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: Text(
+                                  '${startDateTime.hour.toString().padLeft(2, '0')}:${startDateTime.minute.toString().padLeft(2, '0')}',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                    letterSpacing: 0.5,
+                                  ),
                                 ),
                               ),
                             ] else
-                              Text(
-                                nearestOrder.startTime,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF111827),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 7,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.18),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.25),
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: Text(
+                                  nearestOrder.startTime,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                    letterSpacing: 0.3,
+                                  ),
                                 ),
                               ),
                             if (nearestOrder.barber?.name != null) ...[
                               const SizedBox(width: 8),
-                              Text(
-                                '• ${nearestOrder.barber!.name}',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Color(0xFF6B7280),
+                              Flexible(
+                                child: Text(
+                                  '• ${nearestOrder.barber!.name}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.white70,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ),
                             ],
@@ -540,15 +738,26 @@ class _Header extends StatelessWidget {
                       ],
                     ),
                   ),
-                  IconButton(
-                    onPressed: () => context.push('/orders/${nearestOrder.id}'),
-                    icon: const Icon(
-                      Icons.arrow_forward_ios,
-                      size: 16,
-                      color: Color(0xFF0A84FF),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.18),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.25),
+                        width: 1.5,
+                      ),
                     ),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
+                    child: IconButton(
+                      onPressed: () =>
+                          context.push('/orders/${nearestOrder.id}'),
+                      icon: const Icon(
+                        Icons.arrow_forward_ios,
+                        size: 16,
+                        color: Colors.white,
+                      ),
+                      padding: const EdgeInsets.all(9),
+                      constraints: const BoxConstraints(),
+                    ),
                   ),
                 ],
               ),
@@ -636,131 +845,259 @@ class _NextAppointmentCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF1E3A5F), Color(0xFF2C4B77)],
+        ),
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.2), width: 2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: const Color(0xFF1E3A5F).withOpacity(0.4),
             blurRadius: 24,
             offset: const Offset(0, 8),
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Stack(
         children: [
+          // Left border gradient
           Positioned.fill(
             left: 0,
             child: Container(
-              width: 4,
-              decoration: const BoxDecoration(
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  bottomLeft: Radius.circular(20),
+              width: 6,
+              decoration: BoxDecoration(
+                borderRadius: const BorderRadius.all(Radius.circular(20)),
+                gradient: const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFF1E3A5F), Color(0xFF2C4B77)],
                 ),
-                gradient: LinearGradient(
-                  colors: [Color(0xFF0A84FF), Color(0xFF4DA8FF)],
-                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF1E3A5F).withOpacity(0.4),
+                    blurRadius: 10,
+                    offset: const Offset(2, 0),
+                  ),
+                ],
               ),
             ),
           ),
           Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            padding: const EdgeInsets.all(18),
             child: Row(
               children: [
                 Container(
-                  width: 50,
-                  height: 50,
-                  decoration: const BoxDecoration(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF0A84FF), Color(0xFF4DA8FF)],
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF1E3A5F), Color(0xFF2C4B77)],
                     ),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.2),
+                      width: 2.5,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF1E3A5F).withOpacity(0.4),
+                        blurRadius: 14,
+                        offset: const Offset(0, 5),
+                      ),
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: const Icon(
                     Icons.person,
                     color: Colors.white,
+                    size: 28,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        order.barber?.name ?? 'Upcoming appointment',
+                        order.barber?.name ?? 'Yaqinlashayotgan bron',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF111827),
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          letterSpacing: 0.2,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        order.service?.name ?? 'Service',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF6B7280),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 7,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.18),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.25),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Text(
+                          order.service?.name ?? 'Xizmat',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                            letterSpacing: 0.2,
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 10),
                       Row(
                         children: [
-                          const Icon(
-                            Icons.calendar_today_outlined,
-                            size: 14,
-                            color: Color(0xFF6B7280),
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.18),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.25),
+                                width: 1.5,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.calendar_today,
+                              size: 14,
+                              color: Colors.white,
+                            ),
                           ),
-                          const SizedBox(width: 4),
-                          Text(
-                            startDateTime != null
-                                ? '${startDateTime.year}-${startDateTime.month.toString().padLeft(2, '0')}-${startDateTime.day.toString().padLeft(2, '0')} • ${startDateTime.hour.toString().padLeft(2, '0')}:${startDateTime.minute.toString().padLeft(2, '0')}'
-                                : order.startTime,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF6B7280),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              startDateTime != null
+                                  ? '${startDateTime.day.toString().padLeft(2, '0')}.${startDateTime.month.toString().padLeft(2, '0')}.${startDateTime.year}'
+                                  : order.startTime.split(' ').first,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                                letterSpacing: 0.2,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.18),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.25),
+                                width: 1.5,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.access_time,
+                              size: 14,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              startDateTime != null
+                                  ? '${startDateTime.hour.toString().padLeft(2, '0')}:${startDateTime.minute.toString().padLeft(2, '0')}'
+                                  : order.startTime.split(' ').length > 1
+                                  ? order.startTime.split(' ')[1]
+                                  : '',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                                letterSpacing: 0.3,
+                              ),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 4),
-                      if (order.shop != null)
+                      if (order.shop != null) ...[
+                        const SizedBox(height: 8),
                         Row(
                           children: [
-                            const Icon(
-                              Icons.store_mall_directory_outlined,
-                              size: 14,
-                              color: Color(0xFF6B7280),
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.18),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.25),
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: const Icon(
+                                Icons.store,
+                                size: 14,
+                                color: Colors.white,
+                              ),
                             ),
-                            const SizedBox(width: 4),
+                            const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 order.shop!.name,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Color(0xFF6B7280),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.white,
+                                  letterSpacing: 0.1,
                                 ),
                               ),
                             ),
+                          ],
+                        ),
                       ],
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-                const SizedBox(width: 8),
-                IconButton(
-                  onPressed: () =>
-                      context.push('/orders/${order.id}'),
-                  icon: const Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 18,
-                    color: Color(0xFF0A84FF),
+                const SizedBox(width: 12),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.18),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.25),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: IconButton(
+                    onPressed: () => context.push('/orders/${order.id}'),
+                    icon: const Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 18,
+                      color: Colors.white,
+                    ),
+                    padding: const EdgeInsets.all(10),
                   ),
                 ),
               ],
@@ -794,19 +1131,19 @@ class _EmptyNextAppointmentCard extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: const Color(0xFF0A84FF).withOpacity(0.1),
+              color: const Color(0xFF2C4B77).withOpacity(0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(
               Icons.calendar_today_outlined,
-              color: Color(0xFF0A84FF),
+              color: Color(0xFF2C4B77),
             ),
           ),
           const SizedBox(width: 12),
           const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+              children: [
                 Text(
                   "You don't have any active bookings",
                   style: TextStyle(
@@ -818,32 +1155,25 @@ class _EmptyNextAppointmentCard extends StatelessWidget {
                 SizedBox(height: 4),
                 Text(
                   'Book your next haircut in a few taps.',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF6B7280),
-                  ),
+                  style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
                 ),
               ],
-                    ),
-                  ),
+            ),
+          ),
           const SizedBox(width: 8),
-                  ElevatedButton(
+          ElevatedButton(
             onPressed: () => context.push('/shops'),
-                    style: ElevatedButton.styleFrom(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              backgroundColor: const Color(0xFF0A84FF),
-                      foregroundColor: Colors.white,
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              backgroundColor: const Color(0xFF2C4B77),
+              foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(999),
               ),
             ),
             child: const Text(
               'Book Now',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
             ),
           ),
         ],
@@ -852,16 +1182,26 @@ class _EmptyNextAppointmentCard extends StatelessWidget {
   }
 }
 
-class _QuickActionsRow extends ConsumerWidget {
+class _QuickActionsRow extends ConsumerStatefulWidget {
   const _QuickActionsRow();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_QuickActionsRow> createState() => _QuickActionsRowState();
+}
+
+class _QuickActionsRowState extends ConsumerState<_QuickActionsRow> {
+  @override
+  Widget build(BuildContext context) {
     return FutureBuilder<PaginatedResponse<ClientTimelineItem>>(
       future: ref.read(orderServiceProvider).listClientTimeline(perPage: 100),
       builder: (context, snapshot) {
-        final items =
-            snapshot.hasData ? snapshot.data!.data : <ClientTimelineItem>[];
+        final timelineReady =
+            snapshot.connectionState == ConnectionState.done &&
+            snapshot.hasData;
+
+        final items = timelineReady
+            ? snapshot.data!.data
+            : <ClientTimelineItem>[];
         final walkInCount = items.where((i) => i.isWalkIn).length;
 
         return Row(
@@ -877,12 +1217,55 @@ class _QuickActionsRow extends ConsumerWidget {
               label: 'Nearby Shops',
               route: '/shops',
             ),
-            _QuickActionButton(
-              icon: Icons.calendar_today_outlined,
-              label: 'My Bookings',
-              route: '/orders',
-              badgeCount: walkInCount,
-              badgeLabel: 'W',
+            FutureBuilder<int>(
+              future: Storage.getSeenWalkInCount(),
+              builder: (context, seenSnapshot) {
+                var seen = seenSnapshot.data ?? 0;
+
+                // IMPORTANT:
+                // When timeline is still loading, `walkInCount` is 0 (items is empty).
+                // We must NOT sync local seen to 0 during loading, otherwise badge becomes wrong
+                // after data arrives.
+                if (timelineReady) {
+                  // If backend count decreased (reset), align local seen to backend
+                  if (walkInCount < seen) {
+                    seen = walkInCount;
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      Storage.saveSeenWalkInCount(walkInCount);
+                    });
+                  }
+                }
+
+                final unread = timelineReady ? (walkInCount - seen) : 0;
+                final badge = unread > 0 ? unread : 0;
+
+                return _QuickActionButton(
+                  icon: Icons.calendar_today_outlined,
+                  label: 'My Bookings',
+                  route: '/orders',
+                  badgeCount: badge,
+                  badgeLabel: 'W',
+                  onTap: () async {
+                    // Always use fresh backend count on tap (avoid using stale / loading snapshot)
+                    final timeline = await ref
+                        .read(orderServiceProvider)
+                        .listClientTimeline(perPage: 100);
+                    final currentWalkInCount = timeline.data
+                        .where((i) => i.isWalkIn)
+                        .length;
+
+                    // Mark all current walk-ins as "seen" when entering bookings
+                    await Storage.saveSeenWalkInCount(currentWalkInCount);
+
+                    // Go to orders and wait until user returns
+                    if (!context.mounted) return;
+                    await context.push('/orders');
+
+                    // Force rebuild so badge re-reads local seen count (becomes 0)
+                    if (mounted) setState(() {});
+                  },
+                );
+              },
             ),
           ],
         );
@@ -897,6 +1280,7 @@ class _QuickActionButton extends StatelessWidget {
   final String route;
   final int? badgeCount;
   final String? badgeLabel;
+  final Future<void> Function()? onTap;
 
   const _QuickActionButton({
     required this.icon,
@@ -904,6 +1288,7 @@ class _QuickActionButton extends StatelessWidget {
     required this.route,
     this.badgeCount,
     this.badgeLabel,
+    this.onTap,
   });
 
   @override
@@ -912,24 +1297,25 @@ class _QuickActionButton extends StatelessWidget {
       child: Column(
         children: [
           GestureDetector(
-            onTap: () => context.push(route),
+            onTap: () async {
+              if (onTap != null) {
+                await onTap!();
+                return;
+              }
+              context.push(route);
+            },
             child: Stack(
               clipBehavior: Clip.none,
               children: [
                 Container(
                   width: 60,
                   height: 60,
+
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF0A84FF), Color(0xFF4DA8FF)],
-                    ),
+                    color: Color(0xFF2C4B77),
                   ),
-                  child: Icon(
-                    icon,
-                    color: Colors.white,
-                    size: 26,
-                  ),
+                  child: Icon(icon, color: Colors.white, size: 26),
                 ),
                 if ((badgeCount ?? 0) > 0)
                   Positioned(
@@ -964,10 +1350,7 @@ class _QuickActionButton extends StatelessWidget {
           Text(
             label,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Color(0xFF4B5563),
-            ),
+            style: const TextStyle(fontSize: 12, color: Color(0xFF4B5563)),
           ),
         ],
       ),
@@ -981,9 +1364,7 @@ class _StatsCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return FutureBuilder<PaginatedResponse<ClientTimelineItem>>(
-      future: ref
-          .read(orderServiceProvider)
-          .listClientTimeline(perPage: 100),
+      future: ref.read(orderServiceProvider).listClientTimeline(perPage: 100),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Container(
@@ -1006,9 +1387,13 @@ class _StatsCard extends ConsumerWidget {
           );
         }
 
-        final items =
-            snapshot.hasData ? snapshot.data!.data : <ClientTimelineItem>[];
-        final orders = items.where((i) => i.isOrder).map((i) => i.order!).toList();
+        final items = snapshot.hasData
+            ? snapshot.data!.data
+            : <ClientTimelineItem>[];
+        final orders = items
+            .where((i) => i.isOrder)
+            .map((i) => i.order!)
+            .toList();
 
         final totalOrders = items.length;
         final totalSpent = items.fold<int>(0, (sum, item) => sum + item.price);
@@ -1070,9 +1455,9 @@ class _StatsCard extends ConsumerWidget {
                 color: Colors.black.withOpacity(0.05),
                 blurRadius: 24,
                 offset: const Offset(0, 8),
-                      ),
+              ),
             ],
-                    ),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1087,20 +1472,11 @@ class _StatsCard extends ConsumerWidget {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  _StatsItem(
-                    label: 'Total orders',
-                    value: '$totalOrders',
-                  ),
+                  _StatsItem(label: 'Total orders', value: '$totalOrders'),
                   const SizedBox(width: 16),
-                  _StatsItem(
-                    label: 'Total spent',
-                    value: '${totalSpent} UZS',
-                  ),
+                  _StatsItem(label: 'Total spent', value: '$totalSpent UZS'),
                   const SizedBox(width: 16),
-                  _StatsItem(
-                    label: 'Services used',
-                    value: '$servicesUsed',
-                  ),
+                  _StatsItem(label: 'Services used', value: '$servicesUsed'),
                 ],
               ),
               const SizedBox(height: 12),
@@ -1133,10 +1509,7 @@ class _StatsItem extends StatelessWidget {
   final String label;
   final String value;
 
-  const _StatsItem({
-    required this.label,
-    required this.value,
-  });
+  const _StatsItem({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -1146,10 +1519,7 @@ class _StatsItem extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(
-              fontSize: 11,
-              color: Color(0xFF6B7280),
-            ),
+            style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280)),
           ),
           const SizedBox(height: 4),
           Text(
@@ -1157,7 +1527,7 @@ class _StatsItem extends StatelessWidget {
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF0A84FF),
+              color: Color(0xFF2C4B77),
             ),
           ),
         ],
@@ -1186,10 +1556,7 @@ class _StatsRowLabelValue extends StatelessWidget {
         Expanded(
           child: Text(
             label,
-            style: const TextStyle(
-              fontSize: 13,
-              color: Color(0xFF6B7280),
-            ),
+            style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
           ),
         ),
         Text(
@@ -1205,9 +1572,7 @@ class _StatsRowLabelValue extends StatelessWidget {
   }
 }
 
-
 // Provider for current user
-final currentUserProvider = FutureProvider((ref) async {
+final currentUserProvider = FutureProvider.autoDispose((ref) async {
   return await ref.read(authServiceProvider).getCurrentUser();
 });
-

@@ -35,6 +35,10 @@ mixin _$Barber {
   @JsonKey(name: 'rating_avg')
   double? get ratingAvg => throw _privateConstructorUsedError;
   double? get distance => throw _privateConstructorUsedError;
+  @JsonKey(name: 'shop_name')
+  String? get shopName => throw _privateConstructorUsedError;
+  @JsonKey(name: 'shop_barbers_count')
+  int? get shopBarbersCount => throw _privateConstructorUsedError;
   List<BarberService>? get services => throw _privateConstructorUsedError;
   List<BarberSchedule>? get schedules => throw _privateConstructorUsedError;
   @JsonKey(name: 'last_active_at')
@@ -64,6 +68,8 @@ abstract class $BarberCopyWith<$Res> {
     @JsonKey(name: 'schedule_status') String? scheduleStatus,
     @JsonKey(name: 'rating_avg') double? ratingAvg,
     double? distance,
+    @JsonKey(name: 'shop_name') String? shopName,
+    @JsonKey(name: 'shop_barbers_count') int? shopBarbersCount,
     List<BarberService>? services,
     List<BarberSchedule>? schedules,
     @JsonKey(name: 'last_active_at') String? lastActiveAt,
@@ -94,6 +100,8 @@ class _$BarberCopyWithImpl<$Res, $Val extends Barber>
     Object? scheduleStatus = freezed,
     Object? ratingAvg = freezed,
     Object? distance = freezed,
+    Object? shopName = freezed,
+    Object? shopBarbersCount = freezed,
     Object? services = freezed,
     Object? schedules = freezed,
     Object? lastActiveAt = freezed,
@@ -136,6 +144,14 @@ class _$BarberCopyWithImpl<$Res, $Val extends Barber>
                 ? _value.distance
                 : distance // ignore: cast_nullable_to_non_nullable
                       as double?,
+            shopName: freezed == shopName
+                ? _value.shopName
+                : shopName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            shopBarbersCount: freezed == shopBarbersCount
+                ? _value.shopBarbersCount
+                : shopBarbersCount // ignore: cast_nullable_to_non_nullable
+                      as int?,
             services: freezed == services
                 ? _value.services
                 : services // ignore: cast_nullable_to_non_nullable
@@ -172,6 +188,8 @@ abstract class _$$BarberImplCopyWith<$Res> implements $BarberCopyWith<$Res> {
     @JsonKey(name: 'schedule_status') String? scheduleStatus,
     @JsonKey(name: 'rating_avg') double? ratingAvg,
     double? distance,
+    @JsonKey(name: 'shop_name') String? shopName,
+    @JsonKey(name: 'shop_barbers_count') int? shopBarbersCount,
     List<BarberService>? services,
     List<BarberSchedule>? schedules,
     @JsonKey(name: 'last_active_at') String? lastActiveAt,
@@ -201,6 +219,8 @@ class __$$BarberImplCopyWithImpl<$Res>
     Object? scheduleStatus = freezed,
     Object? ratingAvg = freezed,
     Object? distance = freezed,
+    Object? shopName = freezed,
+    Object? shopBarbersCount = freezed,
     Object? services = freezed,
     Object? schedules = freezed,
     Object? lastActiveAt = freezed,
@@ -243,6 +263,14 @@ class __$$BarberImplCopyWithImpl<$Res>
             ? _value.distance
             : distance // ignore: cast_nullable_to_non_nullable
                   as double?,
+        shopName: freezed == shopName
+            ? _value.shopName
+            : shopName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        shopBarbersCount: freezed == shopBarbersCount
+            ? _value.shopBarbersCount
+            : shopBarbersCount // ignore: cast_nullable_to_non_nullable
+                  as int?,
         services: freezed == services
             ? _value._services
             : services // ignore: cast_nullable_to_non_nullable
@@ -273,6 +301,8 @@ class _$BarberImpl implements _Barber {
     @JsonKey(name: 'schedule_status') this.scheduleStatus,
     @JsonKey(name: 'rating_avg') this.ratingAvg,
     this.distance,
+    @JsonKey(name: 'shop_name') this.shopName,
+    @JsonKey(name: 'shop_barbers_count') this.shopBarbersCount,
     final List<BarberService>? services,
     final List<BarberSchedule>? schedules,
     @JsonKey(name: 'last_active_at') this.lastActiveAt,
@@ -305,6 +335,12 @@ class _$BarberImpl implements _Barber {
   final double? ratingAvg;
   @override
   final double? distance;
+  @override
+  @JsonKey(name: 'shop_name')
+  final String? shopName;
+  @override
+  @JsonKey(name: 'shop_barbers_count')
+  final int? shopBarbersCount;
   final List<BarberService>? _services;
   @override
   List<BarberService>? get services {
@@ -331,7 +367,7 @@ class _$BarberImpl implements _Barber {
 
   @override
   String toString() {
-    return 'Barber(id: $id, name: $name, shopId: $shopId, phone: $phone, locationLat: $locationLat, locationLng: $locationLng, scheduleStatus: $scheduleStatus, ratingAvg: $ratingAvg, distance: $distance, services: $services, schedules: $schedules, lastActiveAt: $lastActiveAt)';
+    return 'Barber(id: $id, name: $name, shopId: $shopId, phone: $phone, locationLat: $locationLat, locationLng: $locationLng, scheduleStatus: $scheduleStatus, ratingAvg: $ratingAvg, distance: $distance, shopName: $shopName, shopBarbersCount: $shopBarbersCount, services: $services, schedules: $schedules, lastActiveAt: $lastActiveAt)';
   }
 
   @override
@@ -353,6 +389,10 @@ class _$BarberImpl implements _Barber {
                 other.ratingAvg == ratingAvg) &&
             (identical(other.distance, distance) ||
                 other.distance == distance) &&
+            (identical(other.shopName, shopName) ||
+                other.shopName == shopName) &&
+            (identical(other.shopBarbersCount, shopBarbersCount) ||
+                other.shopBarbersCount == shopBarbersCount) &&
             const DeepCollectionEquality().equals(other._services, _services) &&
             const DeepCollectionEquality().equals(
               other._schedules,
@@ -375,6 +415,8 @@ class _$BarberImpl implements _Barber {
     scheduleStatus,
     ratingAvg,
     distance,
+    shopName,
+    shopBarbersCount,
     const DeepCollectionEquality().hash(_services),
     const DeepCollectionEquality().hash(_schedules),
     lastActiveAt,
@@ -405,6 +447,8 @@ abstract class _Barber implements Barber {
     @JsonKey(name: 'schedule_status') final String? scheduleStatus,
     @JsonKey(name: 'rating_avg') final double? ratingAvg,
     final double? distance,
+    @JsonKey(name: 'shop_name') final String? shopName,
+    @JsonKey(name: 'shop_barbers_count') final int? shopBarbersCount,
     final List<BarberService>? services,
     final List<BarberSchedule>? schedules,
     @JsonKey(name: 'last_active_at') final String? lastActiveAt,
@@ -435,6 +479,12 @@ abstract class _Barber implements Barber {
   double? get ratingAvg;
   @override
   double? get distance;
+  @override
+  @JsonKey(name: 'shop_name')
+  String? get shopName;
+  @override
+  @JsonKey(name: 'shop_barbers_count')
+  int? get shopBarbersCount;
   @override
   List<BarberService>? get services;
   @override

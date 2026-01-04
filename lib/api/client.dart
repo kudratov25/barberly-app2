@@ -53,7 +53,10 @@ class _ErrorInterceptor extends Interceptor {
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
     // Log connection errors for debugging
-    if (err.type == DioExceptionType.connectionError) {
+    if (err.type == DioExceptionType.connectionError ||
+        err.type == DioExceptionType.connectionTimeout ||
+        (err.message?.contains('Failed host lookup') ?? false) ||
+        (err.message?.contains('SocketException') ?? false)) {
       print('Connection error: ${err.message}');
       print('Request URL: ${err.requestOptions.uri}');
       print('Base URL: ${ApiEndpoints.baseUrl}');
@@ -64,7 +67,58 @@ class _ErrorInterceptor extends Interceptor {
       Storage.removeToken();
       // Navigation to login will be handled by the app
     }
-    handler.next(err);
+
+    // Convert low-level Dio errors to user-friendly messages (keep original info in logs)
+    final friendly = _toFriendlyDioException(err);
+    handler.next(friendly);
+  }
+
+  DioException _toFriendlyDioException(DioException err) {
+    final rawMsg = (err.message ?? '').toLowerCase();
+
+    // DNS / host lookup problems (your screenshot)
+    if (rawMsg.contains('failed host lookup') ||
+        rawMsg.contains('no address associated with hostname') ||
+        rawMsg.contains('name not resolved') ||
+        rawMsg.contains('socketexception')) {
+      return DioException(
+        requestOptions: err.requestOptions,
+        response: err.response,
+        type: err.type,
+        error:
+            "Server manzili topilmadi (DNS). Internetni tekshiring yoki backend domen (`${ApiEndpoints.baseUrl}`) ishlayotganini tekshiring.",
+        message:
+            "Server manzili topilmadi (DNS). Internetni tekshiring yoki backend domen (`${ApiEndpoints.baseUrl}`) ishlayotganini tekshiring.",
+      );
+    }
+
+    // Timeouts
+    if (err.type == DioExceptionType.connectionTimeout ||
+        err.type == DioExceptionType.receiveTimeout ||
+        err.type == DioExceptionType.sendTimeout) {
+      return DioException(
+        requestOptions: err.requestOptions,
+        response: err.response,
+        type: err.type,
+        error: 'Server javob bermadi (timeout). Keyinroq qayta urinib ko‘ring.',
+        message:
+            'Server javob bermadi (timeout). Keyinroq qayta urinib ko‘ring.',
+      );
+    }
+
+    // No internet / generic connection error
+    if (err.type == DioExceptionType.connectionError) {
+      return DioException(
+        requestOptions: err.requestOptions,
+        response: err.response,
+        type: err.type,
+        error: 'Internet aloqasi yo‘q yoki serverga ulanib bo‘lmadi.',
+        message: 'Internet aloqasi yo‘q yoki serverga ulanib bo‘lmadi.',
+      );
+    }
+
+    // Keep server-provided errors as-is
+    return err;
   }
 }
 

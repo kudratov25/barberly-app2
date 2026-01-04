@@ -16,6 +16,8 @@ class Barber with _$Barber {
     @JsonKey(name: 'schedule_status') String? scheduleStatus,
     @JsonKey(name: 'rating_avg') double? ratingAvg,
     double? distance,
+    @JsonKey(name: 'shop_name') String? shopName,
+    @JsonKey(name: 'shop_barbers_count') int? shopBarbersCount,
     List<BarberService>? services,
     List<BarberSchedule>? schedules,
     @JsonKey(name: 'last_active_at') String? lastActiveAt,

@@ -85,12 +85,12 @@ class _PeriodButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
           color: isSelected
-              ? const Color(0xFF0A84FF).withOpacity(0.1)
+              ? const Color(0xFF2C4B77) .withOpacity(0.1)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: isSelected
-                ? const Color(0xFF0A84FF)
+                ? const Color(0xFF2C4B77)
                 : const Color(0xFFE5E7EB),
             width: 1,
           ),
@@ -102,7 +102,7 @@ class _PeriodButton extends StatelessWidget {
             fontSize: 14,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
             color: isSelected
-                ? const Color(0xFF0A84FF)
+                ? const Color(0xFF2C4B77)
                 : const Color(0xFF6B7280),
           ),
         ),
@@ -202,7 +202,7 @@ class _StatsContent extends StatelessWidget {
                 title: 'Orders',
                 value: fmt(ordersTotal),
                 icon: Icons.receipt_long,
-                color: const Color(0xFF0A84FF),
+                color: const Color(0xFF2C4B77) ,
               ),
             ),
             const SizedBox(width: 12),
@@ -413,13 +413,13 @@ class _StatsContent extends StatelessWidget {
               );
             }).toList(),
             isCurved: true,
-            color: const Color(0xFF0A84FF),
+            color: const Color(0xFF2C4B77) ,
             barWidth: 3,
             isStrokeCapRound: true,
             dotData: const FlDotData(show: false),
             belowBarData: BarAreaData(
               show: true,
-              color: const Color(0xFF0A84FF).withOpacity(0.1),
+              color: const Color(0xFF2C4B77) .withOpacity(0.1),
             ),
           ),
           // Walk-ins line
@@ -526,7 +526,7 @@ class _StatsContent extends StatelessWidget {
             barRods: [
               BarChartRodData(
                 toY: entry.value.ordersCount.toDouble(),
-                color: const Color(0xFF0A84FF),
+                color: const Color(0xFF2C4B77) ,
                 width: 8,
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(4),

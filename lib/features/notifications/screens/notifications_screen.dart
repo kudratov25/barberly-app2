@@ -9,7 +9,7 @@ class NotificationsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final now = DateTime.now();
 
-    String _formatTime(DateTime dt) {
+    String formatTime(DateTime dt) {
       return DateFormat('HH:mm').format(dt);
     }
 
@@ -27,31 +27,31 @@ class NotificationsScreen extends StatelessWidget {
           _NotificationTile(
             icon: Icons.event_available,
             title: 'Your booking with Jamshid Barber is confirmed',
-            time: _formatTime(now.subtract(const Duration(minutes: 10))),
+            time: formatTime(now.subtract(const Duration(minutes: 10))),
           ),
           _NotificationTile(
             icon: Icons.alarm,
             title: 'Your appointment starts in 1 hour',
-            time: _formatTime(now.subtract(const Duration(hours: 1))),
+            time: formatTime(now.subtract(const Duration(hours: 1))),
           ),
           _NotificationTile(
             icon: Icons.check_circle_outline,
             title: 'Order completed',
-            time: _formatTime(now.subtract(const Duration(hours: 3))),
+            time: formatTime(now.subtract(const Duration(hours: 3))),
           ),
           const SizedBox(height: 24),
           const _SectionHeader(title: 'Chat'),
           _NotificationTile(
             icon: Icons.chat_bubble_outline,
             title: 'You have a new message from Shox Barber',
-            time: _formatTime(now.subtract(const Duration(minutes: 5))),
+            time: formatTime(now.subtract(const Duration(minutes: 5))),
           ),
           const SizedBox(height: 24),
           const _SectionHeader(title: 'System'),
           _NotificationTile(
             icon: Icons.location_on_outlined,
             title: 'New shops near you',
-            time: _formatTime(now.subtract(const Duration(days: 1))),
+            time: formatTime(now.subtract(const Duration(days: 1))),
           ),
         ],
       ),
@@ -104,7 +104,7 @@ class _NotificationTile extends StatelessWidget {
           decoration: const BoxDecoration(
             shape: BoxShape.circle,
             gradient: LinearGradient(
-              colors: [Color(0xFF0A84FF), Color(0xFF4DA8FF)],
+              colors: [Color(0xFF2C4B77) , Color(0xFF4DA8FF)],
             ),
           ),
           child: Icon(icon, color: Colors.white, size: 22),

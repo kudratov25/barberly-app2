@@ -54,6 +54,55 @@ final chatServiceProvider = Provider<ChatService>((ref) {
   return ChatService(ref.watch(apiClientProvider));
 });
 
+/// Total unread chats count (polls every 3 seconds).
+///
+/// Note: backend `unread_count` should already reflect unread messages from the barber.
+/// We additionally guard against counting messages sent by the current user.
+final unreadChatsCountProvider = StreamProvider.autoDispose<int>((ref) async* {
+  var disposed = false;
+  ref.onDispose(() {
+    disposed = true;
+  });
+
+  int? currentUserId;
+
+  while (!disposed) {
+    try {
+      currentUserId ??= (await ref.read(authServiceProvider).getCurrentUser()).id;
+
+      final chats = await ref.read(chatServiceProvider).listChats();
+      var total = 0;
+
+      for (final chat in chats) {
+        final latestMessage = chat.latestMessage;
+        final uid = currentUserId;
+        final isLatestMessageFromCurrentUser =
+            latestMessage != null && latestMessage.userId == uid;
+
+        int unreadCount;
+        if (isLatestMessageFromCurrentUser) {
+          unreadCount = 0;
+        } else if (chat.unreadCount != null && chat.unreadCount! > 0) {
+          unreadCount = chat.unreadCount!;
+        } else if (latestMessage != null && !latestMessage.isRead) {
+          unreadCount = 1;
+        } else {
+          unreadCount = 0;
+        }
+
+        total += unreadCount;
+      }
+
+      yield total;
+    } catch (_) {
+      // If anything fails (network/auth), don't show a badge.
+      yield 0;
+    }
+
+    await Future.delayed(const Duration(seconds: 3));
+  }
+});
+
 /// Rating service provider
 final ratingServiceProvider = Provider<RatingService>((ref) {
   return RatingService(ref.watch(apiClientProvider));

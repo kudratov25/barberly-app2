@@ -427,6 +427,8 @@ mixin _$Shop {
   double? get locationLat => throw _privateConstructorUsedError;
   @JsonKey(name: 'location_lng')
   double? get locationLng => throw _privateConstructorUsedError;
+  @JsonKey(name: 'barbers_count')
+  int? get barbersCount => throw _privateConstructorUsedError;
   ShopOwner? get owner => throw _privateConstructorUsedError;
   @JsonKey(name: 'subscription_plan')
   SubscriptionPlan? get subscriptionPlan => throw _privateConstructorUsedError;
@@ -455,6 +457,7 @@ abstract class $ShopCopyWith<$Res> {
     String status,
     @JsonKey(name: 'location_lat') double? locationLat,
     @JsonKey(name: 'location_lng') double? locationLng,
+    @JsonKey(name: 'barbers_count') int? barbersCount,
     ShopOwner? owner,
     @JsonKey(name: 'subscription_plan') SubscriptionPlan? subscriptionPlan,
     List<ShopService>? services,
@@ -487,6 +490,7 @@ class _$ShopCopyWithImpl<$Res, $Val extends Shop>
     Object? status = null,
     Object? locationLat = freezed,
     Object? locationLng = freezed,
+    Object? barbersCount = freezed,
     Object? owner = freezed,
     Object? subscriptionPlan = freezed,
     Object? services = freezed,
@@ -522,6 +526,10 @@ class _$ShopCopyWithImpl<$Res, $Val extends Shop>
                 ? _value.locationLng
                 : locationLng // ignore: cast_nullable_to_non_nullable
                       as double?,
+            barbersCount: freezed == barbersCount
+                ? _value.barbersCount
+                : barbersCount // ignore: cast_nullable_to_non_nullable
+                      as int?,
             owner: freezed == owner
                 ? _value.owner
                 : owner // ignore: cast_nullable_to_non_nullable
@@ -588,6 +596,7 @@ abstract class _$$ShopImplCopyWith<$Res> implements $ShopCopyWith<$Res> {
     String status,
     @JsonKey(name: 'location_lat') double? locationLat,
     @JsonKey(name: 'location_lng') double? locationLng,
+    @JsonKey(name: 'barbers_count') int? barbersCount,
     ShopOwner? owner,
     @JsonKey(name: 'subscription_plan') SubscriptionPlan? subscriptionPlan,
     List<ShopService>? services,
@@ -619,6 +628,7 @@ class __$$ShopImplCopyWithImpl<$Res>
     Object? status = null,
     Object? locationLat = freezed,
     Object? locationLng = freezed,
+    Object? barbersCount = freezed,
     Object? owner = freezed,
     Object? subscriptionPlan = freezed,
     Object? services = freezed,
@@ -654,6 +664,10 @@ class __$$ShopImplCopyWithImpl<$Res>
             ? _value.locationLng
             : locationLng // ignore: cast_nullable_to_non_nullable
                   as double?,
+        barbersCount: freezed == barbersCount
+            ? _value.barbersCount
+            : barbersCount // ignore: cast_nullable_to_non_nullable
+                  as int?,
         owner: freezed == owner
             ? _value.owner
             : owner // ignore: cast_nullable_to_non_nullable
@@ -686,6 +700,7 @@ class _$ShopImpl implements _Shop {
     required this.status,
     @JsonKey(name: 'location_lat') this.locationLat,
     @JsonKey(name: 'location_lng') this.locationLng,
+    @JsonKey(name: 'barbers_count') this.barbersCount,
     this.owner,
     @JsonKey(name: 'subscription_plan') this.subscriptionPlan,
     final List<ShopService>? services,
@@ -714,6 +729,9 @@ class _$ShopImpl implements _Shop {
   @JsonKey(name: 'location_lng')
   final double? locationLng;
   @override
+  @JsonKey(name: 'barbers_count')
+  final int? barbersCount;
+  @override
   final ShopOwner? owner;
   @override
   @JsonKey(name: 'subscription_plan')
@@ -740,7 +758,7 @@ class _$ShopImpl implements _Shop {
 
   @override
   String toString() {
-    return 'Shop(id: $id, name: $name, address: $address, phone: $phone, status: $status, locationLat: $locationLat, locationLng: $locationLng, owner: $owner, subscriptionPlan: $subscriptionPlan, services: $services, workers: $workers)';
+    return 'Shop(id: $id, name: $name, address: $address, phone: $phone, status: $status, locationLat: $locationLat, locationLng: $locationLng, barbersCount: $barbersCount, owner: $owner, subscriptionPlan: $subscriptionPlan, services: $services, workers: $workers)';
   }
 
   @override
@@ -757,6 +775,8 @@ class _$ShopImpl implements _Shop {
                 other.locationLat == locationLat) &&
             (identical(other.locationLng, locationLng) ||
                 other.locationLng == locationLng) &&
+            (identical(other.barbersCount, barbersCount) ||
+                other.barbersCount == barbersCount) &&
             (identical(other.owner, owner) || other.owner == owner) &&
             (identical(other.subscriptionPlan, subscriptionPlan) ||
                 other.subscriptionPlan == subscriptionPlan) &&
@@ -775,6 +795,7 @@ class _$ShopImpl implements _Shop {
     status,
     locationLat,
     locationLng,
+    barbersCount,
     owner,
     subscriptionPlan,
     const DeepCollectionEquality().hash(_services),
@@ -804,6 +825,7 @@ abstract class _Shop implements Shop {
     required final String status,
     @JsonKey(name: 'location_lat') final double? locationLat,
     @JsonKey(name: 'location_lng') final double? locationLng,
+    @JsonKey(name: 'barbers_count') final int? barbersCount,
     final ShopOwner? owner,
     @JsonKey(name: 'subscription_plan')
     final SubscriptionPlan? subscriptionPlan,
@@ -829,6 +851,9 @@ abstract class _Shop implements Shop {
   @override
   @JsonKey(name: 'location_lng')
   double? get locationLng;
+  @override
+  @JsonKey(name: 'barbers_count')
+  int? get barbersCount;
   @override
   ShopOwner? get owner;
   @override

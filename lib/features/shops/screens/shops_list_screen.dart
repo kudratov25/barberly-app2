@@ -26,14 +26,18 @@ class _ShopsListScreenState extends ConsumerState<ShopsListScreen> {
     _loadShops();
   }
 
-  Future<void> _loadShops() async {
+  Future<void> _loadShops({String? searchQuery}) async {
     setState(() {
       _isLoading = true;
       _error = null;
     });
 
     try {
-      final response = await ref.read(shopServiceProvider).listShops();
+      final response = await ref
+          .read(shopServiceProvider)
+          .listShops(
+            search: searchQuery?.isNotEmpty == true ? searchQuery : null,
+          );
       setState(() {
         _shops = response.data;
         _filteredShops = response.data;
@@ -48,20 +52,8 @@ class _ShopsListScreenState extends ConsumerState<ShopsListScreen> {
   }
 
   void _filterShops(String query) {
-    if (query.isEmpty) {
-      setState(() {
-        _filteredShops = _shops;
-      });
-      return;
-    }
-
-    setState(() {
-      _filteredShops = _shops
-          ?.where((shop) =>
-              shop.name.toLowerCase().contains(query.toLowerCase()) ||
-              (shop.address?.toLowerCase().contains(query.toLowerCase()) ?? false))
-          .toList();
-    });
+    // Backend search ishlatish
+    _loadShops(searchQuery: query.isEmpty ? null : query);
   }
 
   @override
@@ -97,7 +89,7 @@ class _ShopsListScreenState extends ConsumerState<ShopsListScreen> {
                 filled: true,
                 fillColor: const Color(0xFFFAFAFA),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(30),
                   borderSide: BorderSide.none,
                 ),
               ),
@@ -109,35 +101,38 @@ class _ShopsListScreenState extends ConsumerState<ShopsListScreen> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _error != null
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.error_outline,
-                                size: 48, color: Colors.red),
-                            const SizedBox(height: 16),
-                            Text(_error!),
-                            const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: _loadShops,
-                              child: const Text('Retry'),
-                            ),
-                          ],
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          size: 48,
+                          color: Colors.red,
                         ),
-                      )
-                    : _filteredShops == null || _filteredShops!.isEmpty
-                        ? const Center(child: Text('No shops found'))
-                        : RefreshIndicator(
-                            onRefresh: _loadShops,
-                            child: ListView.builder(
-                              padding: const EdgeInsets.all(16),
-                              itemCount: _filteredShops!.length,
-                              itemBuilder: (context, index) {
-                                final shop = _filteredShops![index];
-                                return _ShopCard(shop: shop);
-                              },
-                            ),
-                          ),
+                        const SizedBox(height: 16),
+                        Text(_error!),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: _loadShops,
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  )
+                : _filteredShops == null || _filteredShops!.isEmpty
+                ? const Center(child: Text('No shops found'))
+                : RefreshIndicator(
+                    onRefresh: _loadShops,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: _filteredShops!.length,
+                      itemBuilder: (context, index) {
+                        final shop = _filteredShops![index];
+                        return _ShopCard(shop: shop);
+                      },
+                    ),
+                  ),
           ),
         ],
       ),
@@ -173,12 +168,12 @@ class _ShopCard extends StatelessWidget {
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2196F3).withOpacity(0.1),
+                  color: const Color(0xFF2C4B77).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
                   Icons.store,
-                  color: Color(0xFF2196F3),
+                  color: Color(0xFF2C4B77),
                   size: 30,
                 ),
               ),
@@ -199,8 +194,11 @@ class _ShopCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        const Icon(Icons.location_on,
-                            size: 14, color: Color(0xFF757575)),
+                        const Icon(
+                          Icons.location_on,
+                          size: 14,
+                          color: Color(0xFF757575),
+                        ),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
@@ -218,11 +216,14 @@ class _ShopCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        const Icon(Icons.people,
-                            size: 14, color: Color(0xFF757575)),
+                        const Icon(
+                          Icons.people,
+                          size: 14,
+                          color: Color(0xFF757575),
+                        ),
                         const SizedBox(width: 4),
                         Text(
-                          '${shop.workers?.length ?? 0} barbers',
+                          '${shop.barbersCount ?? shop.workers?.length ?? 0} barber${(shop.barbersCount ?? shop.workers?.length ?? 0) != 1 ? 's' : ''}',
                           style: const TextStyle(
                             fontSize: 13,
                             color: Color(0xFF757575),
@@ -242,4 +243,3 @@ class _ShopCard extends StatelessWidget {
     );
   }
 }
-

@@ -56,16 +56,19 @@ class WalkInSessionScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
-      body: FutureBuilder<WalkIn>(
-        future: ref.read(walkInServiceProvider).getWalkIn(walkInId),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(
+    return FutureBuilder<WalkIn>(
+      future: ref.read(walkInServiceProvider).getWalkIn(walkInId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            backgroundColor: Color(0xFFFAFAFA),
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (snapshot.hasError) {
+          return Scaffold(
+            backgroundColor: const Color(0xFFFAFAFA),
+            body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -74,40 +77,40 @@ class WalkInSessionScreen extends ConsumerWidget {
                   Text('Error: ${snapshot.error}'),
                 ],
               ),
-            );
-          }
-          if (!snapshot.hasData) {
-            return const Center(child: Text('Session not found'));
-          }
+            ),
+          );
+        }
+        if (!snapshot.hasData) {
+          return const Scaffold(
+            backgroundColor: Color(0xFFFAFAFA),
+            body: Center(child: Text('Session not found')),
+          );
+        }
 
-          final walkIn = snapshot.data!;
-          final statusColor = _statusColor(walkIn.status);
-          final startedAt = _tryParse(walkIn.startedAt);
-          final finishedAt = _tryParse(walkIn.finishedAt);
+        final walkIn = snapshot.data!;
+        final statusColor = _statusColor(walkIn.status);
+        final startedAt = _tryParse(walkIn.startedAt);
+        final finishedAt = _tryParse(walkIn.finishedAt);
 
-          return CustomScrollView(
+        return Scaffold(
+          backgroundColor: const Color(0xFFFAFAFA),
+          body: CustomScrollView(
             slivers: [
               SliverAppBar(
                 pinned: true,
                 expandedHeight: 160,
-                backgroundColor: const Color(0xFF2196F3),
+                backgroundColor: const Color(0xFF2C4B77),
                 leading: IconButton(
                   icon: const Icon(Icons.arrow_back),
                   onPressed: () => context.pop(),
                 ),
                 flexibleSpace: FlexibleSpaceBar(
-                  title: Text('Walk-in #${walkIn.id}'),
+                  title: Text(
+                    'Walk-in #${walkIn.id}',
+                    style: const TextStyle(color: Colors.white),
+                  ),
                   background: Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Color(0xFF2196F3),
-                          Color(0xFF1976D2),
-                        ],
-                      ),
-                    ),
+                    color: const Color(0xFF2C4B77),
                     child: Align(
                       alignment: Alignment.bottomLeft,
                       child: Padding(
@@ -177,8 +180,7 @@ class WalkInSessionScreen extends ConsumerWidget {
                               icon: Icons.calendar_today,
                               label: 'Date',
                               value: startedAt != null
-                                  ? DateFormat('MMM dd, yyyy')
-                                      .format(startedAt)
+                                  ? DateFormat('MMM dd, yyyy').format(startedAt)
                                   : (walkIn.startedAt ?? '—'),
                             ),
                             const SizedBox(height: 10),
@@ -210,7 +212,9 @@ class WalkInSessionScreen extends ConsumerWidget {
                               label: 'Barber',
                               value: walkIn.barber?.name ?? '—',
                             ),
-                            if ((walkIn.barber?.phone ?? '').trim().isNotEmpty) ...[
+                            if ((walkIn.barber?.phone ?? '')
+                                .trim()
+                                .isNotEmpty) ...[
                               const SizedBox(height: 10),
                               _InfoRow(
                                 icon: Icons.phone,
@@ -240,14 +244,63 @@ class WalkInSessionScreen extends ConsumerWidget {
                           ],
                         ),
                       ),
+                      const SizedBox(height: 90),
                     ],
                   ),
                 ),
               ),
             ],
-          );
-        },
-      ),
+          ),
+          bottomNavigationBar: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+              child: SizedBox(
+                height: 52,
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    try {
+                      final barber = await ref
+                          .read(barberServiceProvider)
+                          .getBarber(walkIn.barberId);
+                      if (!context.mounted) return;
+                      context.push(
+                        '/barbers/${walkIn.barberId}/book',
+                        extra: barber,
+                      );
+                    } catch (e) {
+                      if (!context.mounted) return;
+                      // Fallback navigation without extra
+                      try {
+                        context.push('/barbers/${walkIn.barberId}/book');
+                      } catch (_) {}
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Barberni ochib bo‘lmadi: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.replay_outlined),
+                  label: const Text(
+                    'Book again',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2C4B77),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    elevation: 2,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -308,15 +361,12 @@ class _InfoRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: const Color(0xFF2196F3)),
+        Icon(icon, size: 18, color: const Color(0xFF2C4B77)),
         const SizedBox(width: 10),
         Expanded(
           child: Text(
             label,
-            style: const TextStyle(
-              color: Color(0xFF6B7280),
-              fontSize: 13,
-            ),
+            style: const TextStyle(color: Color(0xFF6B7280), fontSize: 13),
           ),
         ),
         const SizedBox(width: 10),
@@ -335,4 +385,3 @@ class _InfoRow extends StatelessWidget {
     );
   }
 }
-

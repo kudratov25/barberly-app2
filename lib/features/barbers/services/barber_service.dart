@@ -33,7 +33,7 @@ class BarberService {
     return normalized;
   }
 
-  /// Get nearby barbers
+  /// Get nearby barbers (lat/lng bilan)
   Future<List<Barber>> getNearestBarbers({
     required double lat,
     required double lng,
@@ -55,7 +55,33 @@ class BarberService {
         queryParameters: queryParams,
       );
 
-      return (response.data['data'] as List)
+      final data = response.data['data'] as List;
+      return data
+          .map(
+            (json) => Barber.fromJson(
+              _normalizeBarberJson(json as Map<String, dynamic>),
+            ),
+          )
+          .toList();
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// Search barbers (lat/lngsiz, barber nomi yoki shop nomi bo'yicha)
+  Future<List<Barber>> searchBarbers(String search) async {
+    try {
+      if (search.isEmpty) {
+        return [];
+      }
+
+      final response = await _apiClient.dio.get(
+        ApiEndpoints.barbersNearest,
+        queryParameters: {'search': search},
+      );
+
+      final data = response.data['data'] as List;
+      return data
           .map(
             (json) => Barber.fromJson(
               _normalizeBarberJson(json as Map<String, dynamic>),
@@ -70,8 +96,7 @@ class BarberService {
   /// Get single barber by ID
   Future<Barber> getBarber(int id) async {
     try {
-      final response =
-          await _apiClient.dio.get('${ApiEndpoints.barbersNearest}/$id');
+      final response = await _apiClient.dio.get(ApiEndpoints.barber(id));
       return Barber.fromJson(
         _normalizeBarberJson(
           response.data['data'] as Map<String, dynamic>,

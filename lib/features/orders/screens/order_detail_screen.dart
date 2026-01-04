@@ -14,28 +14,28 @@ class OrderDetailScreen extends ConsumerWidget {
   Color _statusColor(String status) {
     switch (status.toLowerCase()) {
       case 'pending':
-        return Colors.orange;
+        return const Color(0xFFFF9800); // Orange
       case 'in_progress':
-        return Colors.blue;
+        return const Color(0xFF2196F3); // Blue
       case 'completed':
-        return Colors.green;
+        return const Color(0xFF4CAF50); // Green
       case 'cancelled':
-        return Colors.red;
+        return const Color(0xFFF44336); // Red
       default:
-        return Colors.grey;
+        return const Color(0xFF757575); // Grey
     }
   }
 
   String _statusLabel(String status) {
     switch (status.toLowerCase()) {
       case 'pending':
-        return 'Pending';
+        return 'Kutilmoqda';
       case 'in_progress':
-        return 'In progress';
+        return 'Jarayonda';
       case 'completed':
-        return 'Completed';
+        return 'Yakunlangan';
       case 'cancelled':
-        return 'Cancelled';
+        return 'Bekor qilingan';
       default:
         return status;
     }
@@ -52,105 +52,171 @@ class OrderDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
-      body: FutureBuilder<Order>(
-        future: ref.read(orderServiceProvider).getOrder(orderId),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(
+    return FutureBuilder<Order>(
+      future: ref.read(orderServiceProvider).getOrder(orderId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            backgroundColor: Color(0xFFF5F7FA),
+            body: Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2C4B77)),
+              ),
+            ),
+          );
+        }
+        if (snapshot.hasError) {
+          return Scaffold(
+            backgroundColor: const Color(0xFFF5F7FA),
+            body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                  const SizedBox(height: 12),
-                  Text('Error: ${snapshot.error}'),
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF44336).withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.error_outline,
+                      size: 48,
+                      color: Color(0xFFF44336),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Xatolik yuz berdi',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E3A5F),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${snapshot.error}',
+                    style: const TextStyle(color: Color(0xFF757575)),
+                  ),
                 ],
               ),
-            );
-          }
-          if (!snapshot.hasData) {
-            return const Center(child: Text('Order not found'));
-          }
+            ),
+          );
+        }
+        if (!snapshot.hasData) {
+          return const Scaffold(
+            backgroundColor: Color(0xFFF5F7FA),
+            body: Center(
+              child: Text(
+                'Bron topilmadi',
+                style: TextStyle(fontSize: 16, color: Color(0xFF757575)),
+              ),
+            ),
+          );
+        }
 
-          final order = snapshot.data!;
-          final statusColor = _statusColor(order.status);
-          final start = _tryParse(order.startTime);
-          final end = _tryParse(order.endTime);
+        final order = snapshot.data!;
+        final statusColor = _statusColor(order.status);
+        final start = _tryParse(order.startTime);
+        final end = _tryParse(order.endTime);
 
-          return CustomScrollView(
+        return Scaffold(
+          backgroundColor: const Color(0xFFF5F7FA),
+          body: CustomScrollView(
             slivers: [
               SliverAppBar(
                 pinned: true,
-                expandedHeight: 160,
-                backgroundColor: const Color(0xFF2196F3),
+                expandedHeight: 200,
+                backgroundColor: const Color(0xFF1E3A5F),
                 leading: IconButton(
-                  icon: const Icon(Icons.arrow_back),
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
                   onPressed: () => context.pop(),
                 ),
+                iconTheme: const IconThemeData(color: Colors.white),
                 flexibleSpace: FlexibleSpaceBar(
-                  title: Text('Order #${order.id}'),
+                  title: Text(
+                    'Bron #${order.id}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
                   background: Container(
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [
-                          Color(0xFF2196F3),
-                          Color(0xFF1976D2),
-                        ],
+                        colors: [Color(0xFF1E3A5F), Color(0xFF2C4B77)],
                       ),
                     ),
                     child: Align(
                       alignment: Alignment.bottomLeft,
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 56),
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 70),
                         child: Row(
                           children: [
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
+                                horizontal: 16,
+                                vertical: 10,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.18),
-                                borderRadius: BorderRadius.circular(999),
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(25),
                                 border: Border.all(
-                                  color: Colors.white.withOpacity(0.25),
+                                  color: Colors.white.withOpacity(0.3),
+                                  width: 1.5,
                                 ),
                               ),
                               child: Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Container(
-                                    width: 8,
-                                    height: 8,
+                                    width: 10,
+                                    height: 10,
                                     decoration: BoxDecoration(
                                       color: statusColor,
                                       shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: statusColor.withOpacity(0.5),
+                                          blurRadius: 4,
+                                          spreadRadius: 1,
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                  const SizedBox(width: 8),
+                                  const SizedBox(width: 10),
                                   Text(
                                     _statusLabel(order.status),
                                     style: const TextStyle(
                                       color: Colors.white,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                      letterSpacing: 0.5,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
                             const Spacer(),
-                            Text(
-                              '${order.price} UZS',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                '${order.price} UZS',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20,
+                                ),
                               ),
                             ),
                           ],
@@ -166,67 +232,81 @@ class OrderDetailScreen extends ConsumerWidget {
                   child: Column(
                     children: [
                       _InfoCard(
-                        title: 'Appointment',
+                        title: 'Vaqt',
+                        icon: Icons.calendar_today,
                         child: Column(
                           children: [
                             _InfoRow(
                               icon: Icons.calendar_today,
-                              label: 'Date',
+                              label: 'Sana',
                               value: start != null
                                   ? DateFormat('MMM dd, yyyy').format(start)
                                   : order.startTime,
                             ),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 16),
                             _InfoRow(
                               icon: Icons.access_time,
-                              label: 'Time',
+                              label: 'Boshlanish vaqti',
                               value: start != null
                                   ? DateFormat('HH:mm').format(start)
                                   : '—',
                             ),
                             if (end != null) ...[
-                              const SizedBox(height: 10),
+                              const SizedBox(height: 16),
                               _InfoRow(
                                 icon: Icons.timelapse,
-                                label: 'Ends',
+                                label: 'Tugash vaqti',
                                 value: DateFormat('HH:mm').format(end),
                               ),
                             ],
                           ],
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 16),
                       _InfoCard(
-                        title: 'Details',
+                        title: 'Ma\'lumotlar',
+                        icon: Icons.info_outline,
                         child: Column(
                           children: [
                             _InfoRow(
                               icon: Icons.content_cut,
-                              label: 'Service',
+                              label: 'Xizmat',
                               value: order.service?.name ?? '—',
                             ),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 16),
                             _InfoRow(
                               icon: Icons.person,
                               label: 'Barber',
                               value: order.barber?.name ?? '—',
                             ),
-                            if ((order.barber?.phone ?? '').trim().isNotEmpty) ...[
-                              const SizedBox(height: 10),
+                            if ((order.barber?.phone ?? '')
+                                .trim()
+                                .isNotEmpty) ...[
+                              const SizedBox(height: 16),
                               _InfoRow(
                                 icon: Icons.phone,
-                                label: 'Barber phone',
+                                label: 'Telefon',
                                 value: order.barber!.phone!.trim(),
                               ),
                             ],
                           ],
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
                       if (order.status.toLowerCase() == 'pending')
-                        SizedBox(
+                        Container(
                           width: double.infinity,
-                          child: ElevatedButton(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFF44336).withOpacity(0.3),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: ElevatedButton.icon(
                             onPressed: () async {
                               await ref
                                   .read(orderServiceProvider)
@@ -246,7 +326,9 @@ class OrderDetailScreen extends ConsumerWidget {
                                     'Time: ${DateFormat('HH:mm').format(start)}',
                                   'Total: ${order.price} UZS',
                                 ].join('\n');
-                                await ref.read(chatServiceProvider).sendMessage(
+                                await ref
+                                    .read(chatServiceProvider)
+                                    .sendMessage(
                                       chatId: chat.id,
                                       message: msg,
                                       orderId: order.id,
@@ -255,26 +337,82 @@ class OrderDetailScreen extends ConsumerWidget {
 
                               if (context.mounted) context.pop();
                             },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
-                              foregroundColor: Colors.white,
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                            icon: const Icon(Icons.cancel_outlined, size: 22),
+                            label: const Text(
+                              'Bronni bekor qilish',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                            child: const Text('Cancel Order'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFF44336),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              elevation: 0,
+                            ),
                           ),
                         ),
+                      const SizedBox(height: 90),
                     ],
                   ),
                 ),
               ),
             ],
-          );
-        },
-      ),
+          ),
+          bottomNavigationBar: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+              child: SizedBox(
+                height: 52,
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    try {
+                      final barber = await ref
+                          .read(barberServiceProvider)
+                          .getBarber(order.barberId);
+                      if (!context.mounted) return;
+                      context.push(
+                        '/barbers/${order.barberId}/book',
+                        extra: barber,
+                      );
+                    } catch (e) {
+                      if (!context.mounted) return;
+                      // Fallback navigation without extra
+                      try {
+                        context.push('/barbers/${order.barberId}/book');
+                      } catch (_) {}
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Barberni ochib bo‘lmadi: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.replay_outlined),
+                  label: const Text(
+                    'Book again',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2C4B77),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    elevation: 2,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -282,37 +420,55 @@ class OrderDetailScreen extends ConsumerWidget {
 class _InfoCard extends StatelessWidget {
   final String title;
   final Widget child;
+  final IconData? icon;
 
-  const _InfoCard({required this.title, required this.child});
+  const _InfoCard({required this.title, required this.child, this.icon});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.shade200, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
+            color: const Color(0xFF1E3A5F).withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-              color: Color(0xFF111827),
-            ),
+          Row(
+            children: [
+              if (icon != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2C4B77).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, size: 20, color: const Color(0xFF2C4B77)),
+                ),
+                const SizedBox(width: 12),
+              ],
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Color(0xFF1E3A5F),
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           child,
         ],
       ),
@@ -333,33 +489,43 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, size: 18, color: const Color(0xFF2196F3)),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            label,
-            style: const TextStyle(
-              color: Color(0xFF6B7280),
-              fontSize: 13,
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF2196F3).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 18, color: const Color(0xFF2196F3)),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: Color(0xFF757575),
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
-        ),
-        const SizedBox(width: 10),
-        Flexible(
-          child: Text(
-            value,
-            textAlign: TextAlign.right,
-            style: const TextStyle(
-              color: Color(0xFF111827),
-              fontWeight: FontWeight.w600,
-              fontSize: 13,
+          const SizedBox(width: 12),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                color: Color(0xFF1E3A5F),
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
-

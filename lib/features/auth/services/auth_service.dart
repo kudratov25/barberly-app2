@@ -11,6 +11,33 @@ class AuthService {
 
   AuthService(this._apiClient);
 
+  /// Normalize user JSON to handle string coordinates
+  Map<String, dynamic> _normalizeUserJson(Map<String, dynamic> json) {
+    final normalized = Map<String, dynamic>.from(json);
+    
+    // Handle location_lat - convert string to double if needed
+    if (normalized.containsKey('location_lat')) {
+      final lat = normalized['location_lat'];
+      if (lat is String) {
+        normalized['location_lat'] = double.tryParse(lat);
+      } else if (lat is num) {
+        normalized['location_lat'] = lat.toDouble();
+      }
+    }
+    
+    // Handle location_lng - convert string to double if needed
+    if (normalized.containsKey('location_lng')) {
+      final lng = normalized['location_lng'];
+      if (lng is String) {
+        normalized['location_lng'] = double.tryParse(lng);
+      } else if (lng is num) {
+        normalized['location_lng'] = lng.toDouble();
+      }
+    }
+    
+    return normalized;
+  }
+
   /// Register a new user
   Future<AuthResponse> register({
     required String name,
@@ -30,7 +57,14 @@ class AuthService {
         },
       );
 
-      final authResponse = AuthResponse.fromJson(response.data['data']);
+      final data = response.data['data'] as Map<String, dynamic>;
+      
+      // Normalize user data in auth response
+      if (data.containsKey('user') && data['user'] is Map) {
+        data['user'] = _normalizeUserJson(data['user'] as Map<String, dynamic>);
+      }
+      
+      final authResponse = AuthResponse.fromJson(data);
       await Storage.saveToken(authResponse.token);
       return authResponse;
     } on DioException catch (e) {
@@ -50,7 +84,14 @@ class AuthService {
         data: {'phone': phone, 'password': password},
       );
 
-      final authResponse = AuthResponse.fromJson(response.data['data']);
+      final data = response.data['data'] as Map<String, dynamic>;
+      
+      // Normalize user data in auth response
+      if (data.containsKey('user') && data['user'] is Map) {
+        data['user'] = _normalizeUserJson(data['user'] as Map<String, dynamic>);
+      }
+      
+      final authResponse = AuthResponse.fromJson(data);
       await Storage.saveToken(authResponse.token);
       return authResponse;
     } on DioException catch (e) {
@@ -74,7 +115,9 @@ class AuthService {
   Future<User> getCurrentUser() async {
     try {
       final response = await _apiClient.dio.get(ApiEndpoints.me);
-      return User.fromJson(response.data['data']);
+      return User.fromJson(
+        _normalizeUserJson(response.data['data'] as Map<String, dynamic>),
+      );
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -90,7 +133,9 @@ class AuthService {
         ApiEndpoints.updateLocation,
         data: {'lat': lat, 'lng': lng},
       );
-      return User.fromJson(response.data['data']);
+      return User.fromJson(
+        _normalizeUserJson(response.data['data'] as Map<String, dynamic>),
+      );
     } on DioException catch (e) {
       throw _handleError(e);
     }

@@ -43,7 +43,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       }
     } catch (e) {
       setState(() {
-        _errorMessage = e.toString();
+        // AuthService ko'pincha String throw qiladi; DioException ham bo'lishi mumkin.
+        _errorMessage = e is String ? e : e.toString();
         _isLoading = false;
       });
     }

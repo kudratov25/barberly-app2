@@ -3,7 +3,7 @@ class ApiEndpoints {
   // Update this to your Laravel backend URL (include port if needed)
   // For Laravel default: http://10.245.202.220:8000
   // For production: https://yourdomain.com
-  static const String baseUrl = 'http://localhost:8000';
+  static const String baseUrl = 'https://api.barberly.uz/';
   static const String apiPrefix = '/api/v1';
 
   // Auth endpoints
@@ -15,10 +15,12 @@ class ApiEndpoints {
 
   // Barbers endpoints
   static const String barbersNearest = '$apiPrefix/barbers/nearest';
+  static String barber(int id) => '$apiPrefix/barbers/$id';
   static const String barbersSchedule = '$apiPrefix/barbers/schedule';
   static const String barbersStatus = '$apiPrefix/barbers/status';
   static const String barbersLocation = '$apiPrefix/barbers/location';
-  static String barberAvailableSlots(int barberId) => '$apiPrefix/barbers/$barberId/available-slots';
+  static String barberAvailableSlots(int barberId) =>
+      '$apiPrefix/barbers/$barberId/available-slots';
 
   // Shops endpoints
   static const String shops = '$apiPrefix/shops';
@@ -48,8 +50,11 @@ class ApiEndpoints {
   static const String chats = '$apiPrefix/chats';
   static String chat(int id) => '$chats/$id';
   static String chatMessages(int id) => '$chats/$id/messages';
-  static String chatMessage(int chatId, int messageId) => '$chats/$chatId/messages/$messageId';
+  static String chatMessage(int chatId, int messageId) =>
+      '$chats/$chatId/messages/$messageId';
   static String chatRead(int id) => '$chats/$id/read';
+
+  // m commit test
 
   // Ratings endpoints
   static const String ratings = '$apiPrefix/ratings';
