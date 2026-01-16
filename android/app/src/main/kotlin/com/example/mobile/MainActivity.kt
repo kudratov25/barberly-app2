@@ -1,4 +1,4 @@
-package com.example.mobile
+package com.otabek.barber
 
 import io.flutter.embedding.android.FlutterActivity
 
