@@ -1,6 +1,6 @@
 {
-    "name": "mobile",
-    "short_name": "mobile",
+    "name": "Barberly",
+    "short_name": "Barberly",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

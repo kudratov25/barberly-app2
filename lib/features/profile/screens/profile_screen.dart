@@ -310,19 +310,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Column(
                     children: [
-                      // _MenuTile(
-                      //   icon: Icons.bar_chart,
-                      //   title: 'Statistics',
-                      //   subtitle: 'View detailed statistics',
-                      //   onTap: () => context.push('/stats'),
-                      // ),
-                      // const SizedBox(height: 8),
-                      _MenuTile(
-                        icon: Icons.settings,
-                        title: 'Settings',
-                        subtitle: 'App settings and preferences',
-                        onTap: () => context.push('/settings'),
-                      ),
                       const SizedBox(height: 8),
                       _MenuTile(
                         icon: Icons.help_outline,
